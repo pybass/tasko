@@ -98,29 +98,19 @@ clean-dist:
 build: clean-dist
     uv build --no-sources
 
-# Verify the repo is release-ready: clean tree, 'origin' present, HEAD at origin/main tip, version not yet tagged.
+# Verify the repo is release-ready: clean tree, HEAD at origin/main tip, version not yet tagged.
 [group('release')]
 release-preflight:
     #!/usr/bin/env bash
     set -euo pipefail
+    # The wheel is built from the working tree, not a commit — a dirty tree would publish code that exists nowhere in git.
     if [[ -n "$(git status --porcelain)" ]]; then
         echo "error: working tree has uncommitted changes; commit them before publishing." >&2
         exit 1
     fi
-    if ! git remote get-url origin >/dev/null 2>&1; then
-        echo "error: no 'origin' remote; add one so the release tag can be pushed." >&2
-        exit 1
-    fi
-    # Releases come only from the tip of pushed main — never a local-only, stale, or
-    # feature-branch commit (the exact-tip check below enforces the rest).
-    branch=$(git symbolic-ref --quiet --short HEAD || echo "detached HEAD")
-    if [[ "${branch}" != "main" ]]; then
-        echo "error: releases are published from 'main' only (currently on '${branch}')." >&2
-        exit 1
-    fi
-    git fetch -q origin main
-    # Exact tip, not just an ancestor: an unpushed HEAD wouldn't match any mainline state, and a
-    # stale HEAD (forgot to pull on this machine) would silently tag outdated code.
+    # --tags brings remote tags local, so the single tag check below covers both local and origin.
+    git fetch -q --tags origin main
+    # Exact tip of pushed main: an unpushed, stale, or feature-branch HEAD would tag code that public main doesn't have.
     if [[ "$(git rev-parse HEAD)" != "$(git rev-parse refs/remotes/origin/main)" ]]; then
         echo "error: HEAD is not exactly at origin/main; pull or push first." >&2
         exit 1
@@ -128,12 +118,6 @@ release-preflight:
     version=$(uv version --short)
     if git rev-parse -q --verify "refs/tags/v${version}" >/dev/null; then
         echo "error: tag v${version} already exists; bump 'version' in pyproject.toml." >&2
-        exit 1
-    fi
-    # Also check origin: a tag that exists only remotely would otherwise fail the
-    # `git push` AFTER the wheel is already uploaded.
-    if git ls-remote --exit-code --tags origin "refs/tags/v${version}" >/dev/null 2>&1; then
-        echo "error: tag v${version} already exists on origin; bump 'version' in pyproject.toml." >&2
         exit 1
     fi
 
@@ -144,10 +128,6 @@ release: release-preflight check
     set -euo pipefail
     read -rsp "PyPI token: " UV_PUBLISH_TOKEN
     echo
-    if [[ -z "${UV_PUBLISH_TOKEN}" ]]; then
-        echo "error: no token entered." >&2
-        exit 1
-    fi
     export UV_PUBLISH_TOKEN
     uv publish --publish-url https://upload.pypi.org/legacy/ --check-url https://pypi.org/simple/ dist/*
     version=$(uv version --short)
@@ -163,15 +143,3 @@ release: release-preflight check
 [group('maintenance')]
 clean: clean-dist
     rm -rf .pytest_cache .mypy_cache .ruff_cache .coverage* htmlcov
-
-# Upgrade all deps to the newest versions allowed by pyproject constraints, then re-sync.
-# Review the uv.lock diff and run `just check` before committing.
-[group('maintenance')]
-upgrade:
-    uv lock --upgrade
-    uv sync --all-extras --all-groups
-
-# Bump pinned pre-commit hook versions.
-[group('maintenance')]
-pre-commit-autoupdate: env
-    uv run --no-sync pre-commit autoupdate
