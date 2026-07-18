@@ -26,7 +26,9 @@ class Core:
     def __init__(self, db_path: Path) -> None:
         """Open the database (creating the file and its directory if needed) and migrate it."""
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        self._conn = sqlite3.connect(db_path)  # single shared connection
+        # autocommit: every write is a single self-committing statement; anything that ever
+        # needs multi-statement atomicity must use explicit BEGIN/COMMIT (as _migrate does).
+        self._conn = sqlite3.connect(db_path, autocommit=True)  # single shared connection
         self._conn.row_factory = sqlite3.Row
         self._conn.execute("PRAGMA journal_mode = WAL")
         self._conn.execute("PRAGMA busy_timeout = 5000")
@@ -68,7 +70,6 @@ class Core:
             ).fetchone()
         except sqlite3.IntegrityError as e:  # foreign key: no such project
             raise AppError(f"Project #{project_id} not found.") from e
-        self._conn.commit()
         return self.get_task(int(row["id"]))
 
     def get_task(self, task_id: int) -> Task:
@@ -121,7 +122,6 @@ class Core:
             "UPDATE tasks SET status = :status, done_at = :done_at, updated_at = :now WHERE id = :id",
             {"status": status, "done_at": done_at, "now": now, "id": task_id},
         )
-        self._conn.commit()
         if cur.rowcount == 0:
             raise AppError(f"Task #{task_id} not found.")
 
@@ -134,7 +134,6 @@ class Core:
             "UPDATE tasks SET title = :title, updated_at = :now WHERE id = :id",
             {"title": title, "now": _now(), "id": task_id},
         )
-        self._conn.commit()
         if cur.rowcount == 0:
             raise AppError(f"Task #{task_id} not found.")
 
@@ -146,7 +145,6 @@ class Core:
             "UPDATE tasks SET body = :body, updated_at = :now WHERE id = :id",
             {"body": body, "now": _now(), "id": task_id},
         )
-        self._conn.commit()
         if cur.rowcount == 0:
             raise AppError(f"Task #{task_id} not found.")
 
@@ -156,7 +154,6 @@ class Core:
             "UPDATE tasks SET priority = :priority, updated_at = :now WHERE id = :id",
             {"priority": priority, "now": _now(), "id": task_id},
         )
-        self._conn.commit()
         if cur.rowcount == 0:
             raise AppError(f"Task #{task_id} not found.")
 
@@ -169,14 +166,12 @@ class Core:
             )
         except sqlite3.IntegrityError as e:  # foreign key: no such project
             raise AppError(f"Project #{project_id} not found.") from e
-        self._conn.commit()
         if cur.rowcount == 0:
             raise AppError(f"Task #{task_id} not found.")
 
     def delete_task(self, task_id: int) -> None:
         """Delete a task permanently."""
         cur = self._conn.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
-        self._conn.commit()
         if cur.rowcount == 0:
             raise AppError(f"Task #{task_id} not found.")
 
@@ -213,7 +208,6 @@ class Core:
             self._conn.execute("INSERT INTO projects (name) VALUES (?)", (name,))
         except sqlite3.IntegrityError as e:
             raise AppError(f"Project '{name}' already exists.") from e
-        self._conn.commit()
 
     def rename_project(self, project_id: int, new_name: str) -> None:
         """Rename a project; the new name must be unique and non-empty."""
@@ -224,7 +218,6 @@ class Core:
             cur = self._conn.execute("UPDATE projects SET name = ? WHERE id = ?", (new_name, project_id))
         except sqlite3.IntegrityError as e:
             raise AppError(f"Project '{new_name}' already exists.") from e
-        self._conn.commit()
         if cur.rowcount == 0:
             raise AppError(f"Project #{project_id} not found.")
 
@@ -233,7 +226,6 @@ class Core:
         if project_id == self.app_state().default_project_id:
             raise AppError("Cannot delete the default project; make another project the default first.")
         cur = self._conn.execute("DELETE FROM projects WHERE id = ?", (project_id,))
-        self._conn.commit()
         if cur.rowcount == 0:
             raise AppError(f"Project #{project_id} not found.")
 
@@ -251,12 +243,10 @@ class Core:
     def set_selected_project(self, project_id: int | None) -> None:
         """Set the persisted project filter; None means all projects."""
         self._conn.execute("UPDATE app_state SET selected_project_id = ? WHERE id = 1", (project_id,))
-        self._conn.commit()
 
     def set_theme(self, theme: str) -> None:
         """Persist the UI theme choice."""
         self._conn.execute("UPDATE app_state SET theme = ? WHERE id = 1", (theme,))
-        self._conn.commit()
 
     def set_default_project(self, project_id: int) -> None:
         """Make the given project the default target for quick capture."""
@@ -264,4 +254,3 @@ class Core:
             self._conn.execute("UPDATE app_state SET default_project_id = ? WHERE id = 1", (project_id,))
         except sqlite3.IntegrityError as e:  # foreign key: no such project
             raise AppError(f"Project #{project_id} not found.") from e
-        self._conn.commit()
