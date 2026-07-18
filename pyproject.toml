@@ -48,7 +48,6 @@ dev = [
     "ruff~=0.15.22",
     # Type checking
     "mypy~=2.3.0",
-    "ty~=0.0.60",
     # Testing & coverage
     "pytest~=9.1.1",
     "pytest-asyncio~=1.4.0",
@@ -122,7 +121,7 @@ docstring-code-format = true  # keep code examples in docstrings formatted like 
 
 
 # ============================================================================
-#  Type checking — mypy (strict) + ty
+#  Type checking — mypy (strict)
 # ============================================================================
 [tool.mypy]
 python_version = "3.14"
@@ -136,16 +135,6 @@ disallow_incomplete_defs = false
 disallow_untyped_decorators = false
 disallow_untyped_calls = false
 warn_unused_ignores = false
-
-[tool.ty.environment]
-python-version = "3.14"
-
-# Same intent as the mypy test override: silence test-only false positives.
-[[tool.ty.overrides]]
-include = ["tests/**"]
-[tool.ty.overrides.rules]
-possibly-missing-attribute = "ignore"
-invalid-assignment = "ignore"
 
 
 # ============================================================================

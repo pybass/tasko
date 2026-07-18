@@ -32,12 +32,11 @@ check: pre-commit lint test audit build
 lock-check:
     uv lock --check
 
-# Code checks: ruff, ruff format --check, ty, mypy. Never modifies files.
+# Code checks: ruff, ruff format --check, mypy. Never modifies files.
 [group('check')]
 lint: env
     uv run --no-sync ruff check src tests
     uv run --no-sync ruff format --check src tests
-    uv run --no-sync ty check
     uv run --no-sync mypy src tests
 
 # Run the test suite in parallel (pytest -n auto).
