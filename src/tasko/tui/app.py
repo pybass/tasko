@@ -42,7 +42,7 @@ class TaskoApp(App[None]):
     def __init__(self, core: Core) -> None:
         """Wire the app to the shared core."""
         super().__init__()
-        self._core = core  # application core, shared with the CLI
+        self._core = core  # application core, built by main() and owned by it
 
     def action_help(self) -> None:
         """Show the current screen's keys; screens opt in by defining a HELP_KEYS attribute."""
@@ -64,8 +64,9 @@ class TaskoApp(App[None]):
     def on_app_focus(self) -> None:
         """Reload the visible screen when the terminal regains focus.
 
-        This closes the quick-capture loop: `tasko add` from a shell, alt-tab back, the
-        list is fresh. Skipped while a dialog is on top — reloading under a modal could
+        The database can change under a running instance — a second tasko in another
+        terminal — so alt-tabbing back shows a fresh list rather than a stale one.
+        Skipped while a dialog is on top — reloading under a modal could
         fight the interaction in progress (r covers that case), and TaskDetailScreen.reload
         pops the top screen when its task is gone, which must never hit a dialog.
         """

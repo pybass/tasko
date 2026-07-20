@@ -69,8 +69,7 @@ class TestEditing:
 
     async def test_project(self, core):
         """Pressing P moves the task to another project."""
-        core.create_project("work")
-        work = core.get_project_by_name("work")
+        work = core.create_project("work")
         task = core.add_task("x")
         async with TaskoApp(core).run_test() as pilot:
             await open_task(pilot)

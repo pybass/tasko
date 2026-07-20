@@ -20,7 +20,7 @@ def _now() -> int:
 class Core:
     """The application without UI: owns the SQLite connection and every operation on it.
 
-    Adapters (CLI, TUI) call these methods and show AppError messages to the user.
+    Adapters (the TUI) call these methods and show AppError messages to the user.
     """
 
     def __init__(self, db_path: Path) -> None:
@@ -189,25 +189,16 @@ class Core:
             raise AppError(f"Project #{project_id} not found.")
         return Project(**dict(row))
 
-    def get_project_by_name(self, name: str) -> Project:
-        """Return a project by its unique name; raises AppError when it does not exist.
-
-        For adapters whose input addresses projects by name (the CLI); everything else uses ids.
-        """
-        row = self._conn.execute("SELECT id, name FROM projects WHERE name = ?", (name,)).fetchone()
-        if row is None:
-            raise AppError(f"Project '{name}' not found.")
-        return Project(**dict(row))
-
-    def create_project(self, name: str) -> None:
-        """Create a project with a unique non-empty name."""
+    def create_project(self, name: str) -> Project:
+        """Create a project with a unique non-empty name and return it."""
         name = name.strip()
         if not name:
             raise AppError("Project name cannot be empty.")
         try:
-            self._conn.execute("INSERT INTO projects (name) VALUES (?)", (name,))
+            row = self._conn.execute("INSERT INTO projects (name) VALUES (?) RETURNING id", (name,)).fetchone()
         except sqlite3.IntegrityError as e:
             raise AppError(f"Project '{name}' already exists.") from e
+        return Project(id=row["id"], name=name)
 
     def rename_project(self, project_id: int, new_name: str) -> None:
         """Rename a project; the new name must be unique and non-empty."""

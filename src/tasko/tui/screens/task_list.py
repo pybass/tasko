@@ -297,7 +297,7 @@ class TaskListScreen(Screen[None]):
         self.reload()
 
     def action_refresh(self) -> None:
-        """Reload the list: apply pending re-sorts/hides from d/s and pick up outside changes (e.g. CLI adds)."""
+        """Reload the list: apply pending re-sorts/hides from d/s and pick up changes from another instance."""
         self.reload()
 
     def action_focus_project(self) -> None:

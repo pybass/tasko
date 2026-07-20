@@ -30,14 +30,12 @@ class TestAddTask:
 
     def test_explicit_project(self, core):
         """An explicit project id wins over the selected/default target."""
-        core.create_project("work")
-        work = core.get_project_by_name("work")
+        work = core.create_project("work")
         assert core.add_task("x", project_id=work.id).project_id == work.id
 
     def test_targets_selected_project(self, core):
         """Without an explicit project, the task goes to the selected project."""
-        core.create_project("work")
-        work = core.get_project_by_name("work")
+        work = core.create_project("work")
         core.set_selected_project(work.id)
         assert core.add_task("x").project_id == work.id
 
@@ -88,8 +86,7 @@ class TestListTasks:
 
     def test_filter_by_project(self, core):
         """Only the given project's tasks are returned."""
-        core.create_project("work")
-        work = core.get_project_by_name("work")
+        work = core.create_project("work")
         core.add_task("inbox task")
         work_task = core.add_task("work task", project_id=work.id)
         assert ids(core.list_tasks(project_id=work.id)) == [work_task.id]
@@ -115,7 +112,7 @@ class TestProjectTaskCounts:
 
     def test_counts(self, core):
         """Counts are grouped by project; projects without tasks are absent."""
-        inbox = core.get_project_by_name("inbox")
+        inbox = core.get_project(core.app_state().default_project_id)
         core.create_project("empty")
         core.add_task("open")
         done = core.add_task("finished")
@@ -213,8 +210,7 @@ class TestSetProject:
 
     def test_move(self, core):
         """The task ends up in the target project."""
-        core.create_project("work")
-        work = core.get_project_by_name("work")
+        work = core.create_project("work")
         task = core.add_task("x")
         core.set_project(task.id, work.id)
         assert core.get_task(task.id).project_id == work.id
@@ -227,7 +223,7 @@ class TestSetProject:
 
     def test_missing_task(self, core):
         """An unknown task id raises AppError."""
-        inbox = core.get_project_by_name("inbox")
+        inbox = core.get_project(core.app_state().default_project_id)
         with pytest.raises(AppError, match="Task #999 not found"):
             core.set_project(999, inbox.id)
 
@@ -257,15 +253,9 @@ class TestProjects:
         core.create_project("alpha")
         assert [p.name for p in core.list_projects()] == ["alpha", "inbox", "zebra"]
 
-    def test_get_by_name_missing(self, core):
-        """An unknown name raises AppError."""
-        with pytest.raises(AppError, match="Project 'nope' not found"):
-            core.get_project_by_name("nope")
-
     def test_create_strips_name(self, core):
         """Surrounding whitespace is trimmed."""
-        core.create_project("  work  ")
-        assert core.get_project_by_name("work").name == "work"
+        assert core.create_project("  work  ").name == "work"
 
     def test_create_duplicate(self, core):
         """Names are unique."""
@@ -281,15 +271,13 @@ class TestProjects:
 
     def test_rename(self, core):
         """The new name is stored."""
-        core.create_project("work")
-        work = core.get_project_by_name("work")
+        work = core.create_project("work")
         core.rename_project(work.id, "job")
-        assert core.get_project_by_name("job").id == work.id
+        assert core.get_project(work.id).name == "job"
 
     def test_rename_duplicate(self, core):
         """Renaming onto an existing name is rejected."""
-        core.create_project("work")
-        work = core.get_project_by_name("work")
+        work = core.create_project("work")
         with pytest.raises(AppError, match="already exists"):
             core.rename_project(work.id, "inbox")
 
@@ -304,14 +292,13 @@ class TestDeleteProject:
 
     def test_cascades_to_tasks(self, core):
         """Deleting a project deletes its tasks with it."""
-        core.create_project("work")
-        work = core.get_project_by_name("work")
+        work = core.create_project("work")
         task = core.add_task("x", project_id=work.id)
         core.delete_project(work.id)
         with pytest.raises(AppError, match="not found"):
             core.get_task(task.id)
         with pytest.raises(AppError, match="not found"):
-            core.get_project_by_name("work")
+            core.get_project(work.id)
 
     def test_default_refused(self, core):
         """The default project cannot be deleted."""
@@ -320,8 +307,7 @@ class TestDeleteProject:
 
     def test_resets_selected_filter(self, core):
         """Deleting the selected project resets the filter to all projects."""
-        core.create_project("work")
-        work = core.get_project_by_name("work")
+        work = core.create_project("work")
         core.set_selected_project(work.id)
         core.delete_project(work.id)
         assert core.app_state().selected_project_id is None
@@ -338,13 +324,12 @@ class TestAppState:
     def test_initial(self, core):
         """A fresh database defaults to the seed project with no filter."""
         state = core.app_state()
-        assert state.default_project_id == core.get_project_by_name("inbox").id
+        assert core.get_project(state.default_project_id).name == "inbox"
         assert state.selected_project_id is None
 
     def test_set_selected(self, core):
         """The filter can be set and cleared."""
-        core.create_project("work")
-        work = core.get_project_by_name("work")
+        work = core.create_project("work")
         core.set_selected_project(work.id)
         assert core.app_state().selected_project_id == work.id
         core.set_selected_project(None)
@@ -352,8 +337,7 @@ class TestAppState:
 
     def test_set_default(self, core):
         """Any project can be made the default."""
-        core.create_project("work")
-        work = core.get_project_by_name("work")
+        work = core.create_project("work")
         core.set_default_project(work.id)
         assert core.app_state().default_project_id == work.id
 

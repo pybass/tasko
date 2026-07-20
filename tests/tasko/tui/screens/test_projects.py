@@ -39,8 +39,7 @@ class TestProjectsScreen:
 
     async def test_make_default(self, core):
         """Pressing m makes the project under the cursor the default."""
-        core.create_project("work")
-        work = core.get_project_by_name("work")
+        work = core.create_project("work")
         async with TaskoApp(core).run_test() as pilot:
             await open_projects(pilot)
             await pilot.press("down", "m")
@@ -49,8 +48,7 @@ class TestProjectsScreen:
 
     async def test_delete_cascades(self, core):
         """Pressing x deletes the confirmed project together with its tasks."""
-        core.create_project("work")
-        work = core.get_project_by_name("work")
+        work = core.create_project("work")
         task = core.add_task("x", project_id=work.id)
         async with TaskoApp(core).run_test() as pilot:
             await open_projects(pilot)

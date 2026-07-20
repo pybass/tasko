@@ -104,8 +104,7 @@ class TestActions:
 
     async def test_project_filter(self, core):
         """Pressing p picks the project filter; the table narrows to it."""
-        core.create_project("work")
-        work = core.get_project_by_name("work")
+        work = core.create_project("work")
         core.add_task("inbox task")
         core.add_task("work task", project_id=work.id)
         async with TaskoApp(core).run_test() as pilot:

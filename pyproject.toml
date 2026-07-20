@@ -3,7 +3,7 @@
 # ============================================================================
 [project]
 name = "tasko"
-version = "0.0.1"
+version = "0.0.2"
 description = "Personal task manager"
 readme = "README.md"
 authors = [{ name = "pybass" }]
@@ -25,7 +25,7 @@ Repository = "https://github.com/pybass/tasko"
 Issues = "https://github.com/pybass/tasko/issues"
 
 [project.scripts]
-tasko = "tasko.cli.main:main"
+tasko = "tasko.main:main"
 
 
 # ============================================================================
