@@ -46,6 +46,7 @@ class TaskListScreen(Screen[None]):
         ("j", "cursor_down", "Down"),
         ("k", "cursor_up", "Up"),
         ("a", "add", "Add"),
+        ("A", "add_with_project", "Add to project"),
         ("d", "toggle_done", "Done"),
         ("s", "toggle_doing", "Doing"),
         ("plus,equals_sign", "priority_up", "Priority up"),  # = raises too: + is shifted on most layouts
@@ -64,6 +65,7 @@ class TaskListScreen(Screen[None]):
         ("↑ ↓ j k", "move the cursor"),
         ("enter", "open the task under the cursor"),
         ("a", "add a task into the cursor row's project"),
+        ("A", "add a task, choosing the project first"),
         ("d", "mark done / back to todo"),
         ("s", "mark doing / back to todo"),
         ("+ -", "raise / lower the priority"),
@@ -182,6 +184,44 @@ class TaskListScreen(Screen[None]):
                 self.reload()
 
         self.app.push_screen(InputDialog(f'New task in "{name}":'), on_result)
+
+    def action_add_with_project(self) -> None:
+        """Pick the target project from the full list, then prompt for a title.
+
+        The escape hatch for 'a': used when no visible row carries the wanted project.
+        """
+        options: list[tuple[str, str | Text]] = [(str(p.id), p.name) for p in self._core.list_projects()]
+        # Preselect the project plain 'a' would target, so Enter-Enter behaves like 'a'.
+        task_id = self._cursor_task_id()
+        if task_id is not None:
+            current = str(self._core.get_task(task_id).project_id)
+        else:
+            state = self._core.app_state()
+            current = str(state.selected_project_id or state.default_project_id)
+
+        def on_project(choice: str | None) -> None:
+            if choice is None:
+                return
+            project_id = int(choice)
+            name = self._core.get_project(project_id).name
+
+            def on_title(title: str | None) -> None:
+                if not title:
+                    return
+                try:
+                    self._core.add_task(title, project_id=project_id)
+                except AppError as e:
+                    self.notify(str(e), severity="error")
+                    return
+                self.reload()
+                # The task is invisible when a different project filter is active — confirm it landed.
+                filter_id = self._core.app_state().selected_project_id
+                if filter_id is not None and filter_id != project_id:
+                    self.notify(f'Added to "{name}"')
+
+            self.app.push_screen(InputDialog(f'New task in "{name}":'), on_title)
+
+        self.app.push_screen(SelectDialog("Add task to project:", options, current), on_project)
 
     def _cursor_task_id(self) -> int | None:
         """Return the id of the task under the cursor, or None on an empty table.
