@@ -2,14 +2,11 @@
 
 import sqlite3
 import time
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 from tasko.core.errors import AppError
 from tasko.core.migrations import MIGRATIONS
 from tasko.core.models import AppState, Priority, Project, Status, Task
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 def _now() -> int:
@@ -82,28 +79,24 @@ class Core:
             raise AppError(f"Task #{task_id} not found.")
         return Task.from_row(row)
 
-    def list_tasks(
-        self, *, project_id: int | None = None, status: Status | None = None, include_done: bool = False
-    ) -> list[Task]:
-        """Return tasks in working order, optionally filtered by project id and/or status; a None filter means "any".
+    def list_tasks(self, *, project_id: int | None = None, include_done: bool = False) -> list[Task]:
+        """Return tasks in working order, optionally filtered to one project; done tasks appear only with include_done.
 
         Working order: doing first, then by priority, then recently updated; done tasks
-        sink to the bottom (recently finished first, since done_at == updated_at). They
-        are excluded by default; asking for status DONE explicitly implies them.
+        sink to the bottom (recently finished first, since done_at == updated_at).
         """
         rows = self._conn.execute(
             """
             SELECT t.*, p.name AS project_name
             FROM tasks t JOIN projects p ON p.id = t.project_id
             WHERE (:project_id IS NULL OR t.project_id = :project_id)
-              AND (:status IS NULL OR t.status = :status)
               AND (:include_done OR t.status != 'done')
             ORDER BY t.status = 'done',
                      t.status = 'doing' DESC,
                      CASE t.priority WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END,
                      t.updated_at DESC
             """,
-            {"project_id": project_id, "status": status, "include_done": include_done or status is Status.DONE},
+            {"project_id": project_id, "include_done": include_done},
         ).fetchall()
         return [Task.from_row(row) for row in rows]
 

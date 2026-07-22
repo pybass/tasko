@@ -1,26 +1,22 @@
 """Task detail screen: full details of one task with per-field editing."""
 
+from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, ClassVar, Final
+from typing import ClassVar, Final
 
 from rich.table import Table
 from rich.text import Text
+from textual.app import ComposeResult
+from textual.binding import BindingType
 from textual.containers import VerticalScroll
 from textual.screen import Screen
 from textual.widgets import Static
 
+from tasko.core.core import Core
 from tasko.core.errors import AppError
 from tasko.core.models import Priority, Status, Task
 from tasko.tui.screens.dialogs import ConfirmDialog, InputDialog, SelectDialog, TextDialog
 from tasko.tui.widgets import StatusBar
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
-    from textual.app import ComposeResult
-    from textual.binding import BindingType
-
-    from tasko.core.core import Core
 
 # Same glyphs and colors as the table on the main screen, spelled out with the word.
 _STATUS_TEXT: Final = {

@@ -1,18 +1,15 @@
 """Textual application: a thin shell that mounts the main screen."""
 
-from typing import TYPE_CHECKING, ClassVar
+from typing import ClassVar
 
 from textual.app import App
+from textual.binding import BindingType
 
+from tasko.core.core import Core
 from tasko.tui.screens.dialogs import HelpDialog
 from tasko.tui.screens.projects import ProjectsScreen
 from tasko.tui.screens.task_detail import TaskDetailScreen
 from tasko.tui.screens.task_list import TaskListScreen
-
-if TYPE_CHECKING:
-    from textual.binding import BindingType
-
-    from tasko.core.core import Core
 
 
 class TaskoApp(App[None]):

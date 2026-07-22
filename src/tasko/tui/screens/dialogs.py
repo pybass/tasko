@@ -1,11 +1,13 @@
 """Reusable modal dialogs: one-line text input, yes/no confirmation, option picking, and key help."""
 
+from collections.abc import Sequence
 from importlib.metadata import version
-from typing import TYPE_CHECKING, ClassVar, Final
+from typing import ClassVar, Final
 
 from rich.style import Style
 from rich.table import Table
 from rich.text import Text
+from textual.app import ComposeResult
 from textual.binding import Binding, BindingType
 from textual.containers import Vertical
 from textual.fuzzy import FuzzySearch
@@ -13,19 +15,11 @@ from textual.screen import ModalScreen
 from textual.widgets import Input, Label, OptionList, Static, TextArea
 from textual.widgets.option_list import Option
 
-if TYPE_CHECKING:
-    from collections.abc import Sequence
-
-    from textual.app import ComposeResult
-
 _MATCH_STYLE: Final = Style(bold=True, underline=True)  # characters of a label the fuzzy query matched
 
 
 class Dialog[ResultT](ModalScreen[ResultT]):
-    """Base modal dialog: a centered bordered panel over the dimmed screen; Escape cancels.
-
-    Subclasses define action_cancel with their own "cancelled" result.
-    """
+    """Base modal dialog: a centered bordered panel over the dimmed screen; Escape cancels with None."""
 
     DEFAULT_CSS = """
     Dialog {
@@ -45,6 +39,10 @@ class Dialog[ResultT](ModalScreen[ResultT]):
     """
 
     BINDINGS: ClassVar[list[BindingType]] = [("escape", "cancel", "Cancel")]
+
+    def action_cancel(self) -> None:
+        """Cancel the dialog without a result."""
+        self.dismiss(None)
 
 
 class InputDialog(Dialog[str | None]):
@@ -76,10 +74,6 @@ class InputDialog(Dialog[str | None]):
     def on_input_submitted(self, event: Input.Submitted) -> None:
         """Enter accepts the value."""
         self.dismiss(event.value)
-
-    def action_cancel(self) -> None:
-        """Escape cancels without a value."""
-        self.dismiss(None)
 
 
 class TextDialog(Dialog[str | None]):
@@ -135,10 +129,6 @@ class TextDialog(Dialog[str | None]):
         """Ctrl+A selects the whole text, e.g. to replace or delete a long body at once."""
         self.query_one(TextArea).select_all()
 
-    def action_cancel(self) -> None:
-        """Escape cancels without a value."""
-        self.dismiss(None)
-
 
 class ConfirmDialog(Dialog[bool]):
     """Ask a yes/no question; dismisses with True only on explicit confirmation."""
@@ -169,10 +159,6 @@ class ConfirmDialog(Dialog[bool]):
     def action_confirm(self) -> None:
         """Confirm the action."""
         self.dismiss(True)
-
-    def action_cancel(self) -> None:
-        """Cancel the action."""
-        self.dismiss(False)
 
 
 class HelpDialog(Dialog[None]):
@@ -206,10 +192,6 @@ class HelpDialog(Dialog[None]):
             yield Label("Keys")
             yield Static(grid, id="keys")
             yield Label(f"tasko v{version('tasko')}", id="about")
-
-    def action_cancel(self) -> None:
-        """Close the help."""
-        self.dismiss(None)
 
 
 class SelectDialog(Dialog[str | None]):
@@ -336,7 +318,3 @@ class SelectDialog(Dialog[str | None]):
     def action_last(self) -> None:
         """Jump the list highlight to the last option without leaving the input."""
         self.query_one(OptionList).action_last()
-
-    def action_cancel(self) -> None:
-        """Escape cancels without a choice."""
-        self.dismiss(None)

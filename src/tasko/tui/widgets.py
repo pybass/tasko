@@ -1,14 +1,10 @@
 """Shared TUI widgets."""
 
-from typing import TYPE_CHECKING
-
 from rich.text import Text
+from textual.app import ComposeResult
 from textual.containers import Horizontal
+from textual.visual import VisualType
 from textual.widgets import Label
-
-if TYPE_CHECKING:
-    from textual.app import ComposeResult
-    from textual.visual import VisualType
 
 
 class StatusBar(Horizontal):

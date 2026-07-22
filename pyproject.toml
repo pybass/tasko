@@ -58,7 +58,7 @@ dev = [
     # Dependency hygiene — imports vs declared deps
     "deptry~=0.25.1",
     # Git pre-commit hooks
-    "pre-commit~=4.6.0",
+    "pre-commit~=4.6.1",
 ]
 
 
@@ -83,6 +83,9 @@ ignore = [
     "PLC0414",  # useless-import-alias — `import x as x` is our explicit re-export marker
     "RET503",   # implicit-return — explicit None returns are noisy
     "G004",     # f-strings in logging — accepted
+    "TC001",    # typing-only first-party import — plain imports read simpler than TYPE_CHECKING blocks
+    "TC002",    # typing-only third-party import — see TC001
+    "TC003",    # typing-only stdlib import — see TC001
 
     # --- flake8-pytest-style: opinionated rules only (bug-catchers stay on) ---
     "PT001",    # fixture-incorrect-parentheses-style — cosmetic

@@ -91,13 +91,6 @@ class TestListTasks:
         work_task = core.add_task("work task", project_id=work.id)
         assert ids(core.list_tasks(project_id=work.id)) == [work_task.id]
 
-    def test_filter_by_status(self, core):
-        """Only tasks with the given status are returned."""
-        core.add_task("open")
-        done = core.add_task("finished")
-        core.set_status(done.id, Status.DONE)
-        assert ids(core.list_tasks(status=Status.DONE)) == [done.id]
-
     def test_hides_done_by_default(self, core):
         """Done tasks appear only with include_done."""
         open_task = core.add_task("open")

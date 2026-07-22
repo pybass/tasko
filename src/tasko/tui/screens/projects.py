@@ -1,22 +1,18 @@
 """Projects screen: a table of projects with management actions."""
 
-from typing import TYPE_CHECKING, ClassVar, Final
+from collections.abc import Callable
+from typing import ClassVar, Final
 
 from rich.text import Text
+from textual.app import ComposeResult
+from textual.binding import BindingType
 from textual.screen import Screen
 from textual.widgets import DataTable
 
+from tasko.core.core import Core
 from tasko.core.errors import AppError
 from tasko.tui.screens.dialogs import ConfirmDialog, InputDialog
 from tasko.tui.widgets import StatusBar
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
-    from textual.app import ComposeResult
-    from textual.binding import BindingType
-
-    from tasko.core.core import Core
 
 _DEFAULT_CELL: Final = Text("default", style="green")  # marks the default project; space is not scarce here
 

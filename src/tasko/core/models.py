@@ -1,11 +1,9 @@
 """Domain models: projects, tasks, and their enums."""
 
+import sqlite3
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Self
-
-if TYPE_CHECKING:
-    import sqlite3
+from typing import Any, Self
 
 
 class Status(StrEnum):

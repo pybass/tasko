@@ -1,24 +1,21 @@
 """Main screen: the task table."""
 
-from typing import TYPE_CHECKING, ClassVar, Final
+from typing import ClassVar, Final
 
 from rich.cells import cell_len
 from rich.text import Text
+from textual.app import ComposeResult
+from textual.binding import BindingType
 from textual.screen import Screen
 from textual.widgets import DataTable
 
+from tasko.core.core import Core
 from tasko.core.errors import AppError
 from tasko.core.models import Priority, Status
 from tasko.tui.screens.dialogs import ConfirmDialog, InputDialog, SelectDialog
 from tasko.tui.screens.projects import ProjectsScreen
 from tasko.tui.screens.task_detail import TaskDetailScreen
 from tasko.tui.widgets import StatusBar
-
-if TYPE_CHECKING:
-    from textual.app import ComposeResult
-    from textual.binding import BindingType
-
-    from tasko.core.core import Core
 
 # One-character, color-coded cells: the S/P/B columns must not waste width.
 _STATUS_CELLS: Final = {
@@ -164,14 +161,8 @@ class TaskListScreen(Screen[None]):
         falls back to the selected, then the default project. Wrong target? Escape, move
         the cursor to a row of the right project, or change the project on the task later.
         """
-        task_id = self._cursor_task_id()
-        if task_id is not None:
-            task = self._core.get_task(task_id)
-            project_id, name = task.project_id, task.project_name
-        else:
-            state = self._core.app_state()
-            project_id = state.selected_project_id or state.default_project_id
-            name = self._core.get_project(project_id).name
+        project_id = self._add_target_project_id()
+        name = self._core.get_project(project_id).name
 
         def on_result(title: str | None) -> None:
             if not title:
@@ -192,12 +183,7 @@ class TaskListScreen(Screen[None]):
         """
         options: list[tuple[str, str | Text]] = [(str(p.id), p.name) for p in self._core.list_projects()]
         # Preselect the project plain 'a' would target, so Enter-Enter behaves like 'a'.
-        task_id = self._cursor_task_id()
-        if task_id is not None:
-            current = str(self._core.get_task(task_id).project_id)
-        else:
-            state = self._core.app_state()
-            current = str(state.selected_project_id or state.default_project_id)
+        current = str(self._add_target_project_id())
 
         def on_project(choice: str | None) -> None:
             if choice is None:
@@ -222,6 +208,14 @@ class TaskListScreen(Screen[None]):
             self.app.push_screen(InputDialog(f'New task in "{name}":'), on_title)
 
         self.app.push_screen(SelectDialog("Add task to project:", options, current), on_project)
+
+    def _add_target_project_id(self) -> int:
+        """Project a plain add targets: the cursor row's project, else the selected, else the default one."""
+        task_id = self._cursor_task_id()
+        if task_id is not None:
+            return self._core.get_task(task_id).project_id
+        state = self._core.app_state()
+        return state.selected_project_id or state.default_project_id
 
     def _cursor_task_id(self) -> int | None:
         """Return the id of the task under the cursor, or None on an empty table.
