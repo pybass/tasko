@@ -45,7 +45,7 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     # Linting & formatting
-    "ruff~=0.15.22",
+    "ruff~=0.16.0",
     # Type checking
     "mypy~=2.3.0",
     # Testing & coverage
@@ -83,9 +83,6 @@ ignore = [
     "PLC0414",  # useless-import-alias — `import x as x` is our explicit re-export marker
     "RET503",   # implicit-return — explicit None returns are noisy
     "G004",     # f-strings in logging — accepted
-    "TC001",    # typing-only first-party import — plain imports read simpler than TYPE_CHECKING blocks
-    "TC002",    # typing-only third-party import — see TC001
-    "TC003",    # typing-only stdlib import — see TC001
 
     # --- flake8-pytest-style: opinionated rules only (bug-catchers stay on) ---
     "PT001",    # fixture-incorrect-parentheses-style — cosmetic
@@ -97,6 +94,8 @@ ignore = [
     "FIX",      # flake8-fixme — TODOs are fine; tracked elsewhere
     "FBT",      # boolean-trap — too restrictive
     "EM",       # error-message strings — inline messages accepted
+    "CPY",      # flake8-copyright — no copyright headers: internal-only code, ships no license by design (README)
+    "TC",       # flake8-type-checking — TYPE_CHECKING blocks save import time we don't care about; cost: import noise + broken runtime annotations (pydantic)
     "TRY003",   # raise-vanilla-args — too noisy
     "C901",     # complex-structure — judgment call
 
@@ -113,6 +112,9 @@ ignore = [
     # --- Async edge case ---
     "ASYNC109", # async-function-with-timeout — debatable, off
 ]
+
+[tool.ruff.lint.pep8-naming]
+classmethod-decorators = ["pydantic.field_validator"]  # N805: @field_validator implies classmethod — cls is correct without a stacked @classmethod
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["ANN", "S"]  # tests skip type-annotation (ANN) and assert/security (S) rules
