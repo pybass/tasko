@@ -119,7 +119,7 @@ class TaskDetailScreen(Screen[None]):
         self.query_one(StatusBar).set_context(Text.assemble(f"task #{task.id}", (f" · {task.project_name}", "dim")))
 
         self.query_one("#title", Static).update(Text(task.title))
-        # Two column groups: live fields on the left (main-table order), dates on the right, all dim.
+        # Two column groups: live fields on the left (main-table order), dates on the right; all dim but the field values.
         meta = Table.grid(padding=(0, 2))
         meta.add_column(style="dim")
         meta.add_column()

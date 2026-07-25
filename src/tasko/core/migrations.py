@@ -1,7 +1,7 @@
 """Database schema migrations, applied in order by Core."""
 
-# Schema v1 (see docs/data-model.md). IF NOT EXISTS / OR IGNORE predate the atomic runner
-# in Core._migrate and are harmless; new migrations don't need to be rerun-safe.
+# Schema v1 (see docs/data-model.md). IF NOT EXISTS / OR IGNORE make a rerun a no-op;
+# with the atomic runner in Core._migrate, new migrations don't need to be rerun-safe.
 _MIGRATION_V1 = """
 CREATE TABLE IF NOT EXISTS projects (
     id   INTEGER PRIMARY KEY AUTOINCREMENT,

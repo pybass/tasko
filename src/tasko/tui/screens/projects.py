@@ -18,7 +18,7 @@ _DEFAULT_CELL: Final = Text("default", style="green")  # marks the default proje
 
 
 class ProjectsScreen(Screen[None]):
-    """Project management — rarely visited, reached from the task screen with P."""
+    """Project management — rarely visited, reached from the task list with P."""
 
     BINDINGS: ClassVar[list[BindingType]] = [
         ("j", "cursor_down", "Down"),

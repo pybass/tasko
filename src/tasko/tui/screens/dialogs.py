@@ -1,4 +1,4 @@
-"""Reusable modal dialogs: one-line text input, yes/no confirmation, option picking, and key help."""
+"""Reusable modal dialogs: one-line and multi-line text input, yes/no confirmation, option picking, and key help."""
 
 from collections.abc import Sequence
 from importlib.metadata import version
@@ -56,7 +56,7 @@ class InputDialog(Dialog[str | None]):
     """
 
     def __init__(self, title: str, value: str = "") -> None:
-        """Set the prompt title and the optional pre-filled value (used by rename)."""
+        """Set the prompt title and the optional pre-filled value."""
         super().__init__()
         self._title = title  # prompt shown above the input
         self._value = value  # initial input content

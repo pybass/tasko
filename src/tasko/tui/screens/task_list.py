@@ -17,7 +17,7 @@ from tasko.tui.screens.projects import ProjectsScreen
 from tasko.tui.screens.task_detail import TaskDetailScreen
 from tasko.tui.widgets import StatusBar
 
-# One-character, color-coded cells: the S/P/B columns must not waste width.
+# One-character, color-coded cells: the status, priority and body columns must not waste width.
 _STATUS_CELLS: Final = {
     Status.TODO: Text("○", style="dim"),
     Status.DOING: Text("◐", style="yellow"),
