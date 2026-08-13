@@ -20,9 +20,9 @@ from tasko.tui.widgets import StatusBar
 
 # Same glyphs and colors as the table on the main screen, spelled out with the word.
 _STATUS_TEXT: Final = {
-    Status.TODO: Text("○ todo", style="dim"),
-    Status.DOING: Text("◐ doing", style="yellow"),
-    Status.DONE: Text("● done", style="green"),
+    Status.TODO: Text("· todo", style="dim"),
+    Status.DOING: Text("» doing", style="yellow"),
+    Status.DONE: Text("✓ done", style="green"),
 }
 _PRIORITY_TEXT: Final = {
     Priority.HIGH: Text("high", style="red"),

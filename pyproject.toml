@@ -3,7 +3,7 @@
 # ============================================================================
 [project]
 name = "tasko"
-version = "0.0.2"
+version = "0.0.3"
 description = "Personal task manager"
 readme = "README.md"
 authors = [{ name = "pybass" }]
@@ -35,7 +35,7 @@ tasko = "tasko.main:main"
 # uv.lock does not cover, so an open-ended requirement would let the same tag build differently
 # over time.
 [build-system]
-requires = ["uv_build>=0.11,<0.12"]
+requires = ["uv_build>=0.11,<0.13"]
 build-backend = "uv_build"
 
 
@@ -45,7 +45,7 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     # Linting & formatting
-    "ruff~=0.16.0",
+    "ruff~=0.16.2",
     # Type checking
     "mypy~=2.3.0",
     # Testing & coverage
@@ -58,7 +58,7 @@ dev = [
     # Dependency hygiene — imports vs declared deps
     "deptry~=0.25.1",
     # Git pre-commit hooks
-    "pre-commit~=4.6.1",
+    "pre-commit~=4.6.2",
 ]
 
 
@@ -74,7 +74,6 @@ select = ["ALL"]
 ignore = [
     # --- Ecosystem / tool conflicts ---
     "COM812",   # trailing-comma — handled by ruff formatter, must be off here
-    "ISC001",   # single-line-implicit-string-concat — conflicts with ruff formatter
     "D203",     # one-blank-line-before-class — conflicts with D211
     "D213",     # multi-line-summary-second-line — conflicts with D212
 
@@ -104,10 +103,6 @@ ignore = [
     "PLR0912",  # too-many-branches
     "PLR0913",  # too-many-arguments
     "PLR2004",  # magic-value-comparison
-
-    # --- TODO metadata (optional) ---
-    "TD002",    # missing-todo-author
-    "TD003",    # missing-todo-link
 
     # --- Async edge case ---
     "ASYNC109", # async-function-with-timeout — debatable, off

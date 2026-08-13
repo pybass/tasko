@@ -19,9 +19,9 @@ from tasko.tui.widgets import StatusBar
 
 # One-character, color-coded cells: the status, priority and body columns must not waste width.
 _STATUS_CELLS: Final = {
-    Status.TODO: Text("○", style="dim"),
-    Status.DOING: Text("◐", style="yellow"),
-    Status.DONE: Text("●", style="green"),
+    Status.TODO: Text("·", style="dim"),
+    Status.DOING: Text("»", style="yellow"),
+    Status.DONE: Text("✓", style="green"),
 }
 _PRIORITY_CELLS: Final = {
     Priority.HIGH: Text("↑", style="red"),
