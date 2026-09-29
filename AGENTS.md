@@ -8,18 +8,11 @@ or to avoid a mistake — no preamble, no recap, no filler. Go into detail only 
 All code, comments, commit messages, and files must ALWAYS be in English — no exceptions.
 
 ## Mandatory Rules (external)
-These files are REQUIRED. Read them fully and follow all rules.
+Read these files fully and follow them.
 - `~/.claude/rules/general.md`
+- `~/.claude/rules/code.md`
 - `~/.claude/rules/python.md`
 
 ## Project Reading (context)
-These files are REQUIRED for project understanding.
+Read these before the first task; do not answer until you have.
 - `README.md`
-
-## Preflight (mandatory)
-Before your first response:
-1. Read all files listed above.
-2. Do not answer until all are read.
-3. In your first reply, list every file you have read from this document.
-
-Failure to follow this protocol is considered an error.

@@ -12,6 +12,7 @@ from textual.widgets import DataTable
 from tasko.core.core import Core
 from tasko.core.errors import AppError
 from tasko.core.models import Priority, Status
+from tasko.tui.keys import with_ru_layout
 from tasko.tui.screens.dialogs import ConfirmDialog, InputDialog, SelectDialog
 from tasko.tui.screens.projects import ProjectsScreen
 from tasko.tui.screens.task_detail import TaskDetailScreen
@@ -39,23 +40,25 @@ def _title_cell(title: str, status: Status) -> Text:
 class TaskListScreen(Screen[None]):
     """Task list — the screen the app lives on."""
 
-    BINDINGS: ClassVar[list[BindingType]] = [
-        ("j", "cursor_down", "Down"),
-        ("k", "cursor_up", "Up"),
-        ("a", "add", "Add"),
-        ("A", "add_with_project", "Add to project"),
-        ("d", "toggle_done", "Done"),
-        ("s", "toggle_doing", "Doing"),
-        ("plus,equals_sign", "priority_up", "Priority up"),  # = raises too: + is shifted on most layouts
-        ("minus", "priority_down", "Priority down"),
-        ("x", "delete", "Delete"),
-        ("D", "toggle_show_done", "Show done"),
-        ("f", "focus_project", "Focus"),
-        ("p", "select_project", "Project"),
-        ("r", "refresh", "Refresh"),
-        ("P", "projects", "Projects"),
-        ("q", "app.quit", "Quit"),
-    ]
+    BINDINGS: ClassVar[list[BindingType]] = with_ru_layout(
+        [
+            ("j", "cursor_down", "Down"),
+            ("k", "cursor_up", "Up"),
+            ("a", "add", "Add"),
+            ("A", "add_with_project", "Add to project"),
+            ("d", "toggle_done", "Done"),
+            ("s", "toggle_doing", "Doing"),
+            ("plus,equals_sign", "priority_up", "Priority up"),  # = raises too: + is shifted on most layouts
+            ("minus", "priority_down", "Priority down"),
+            ("x", "delete", "Delete"),
+            ("D", "toggle_show_done", "Show done"),
+            ("f", "focus_project", "Focus"),
+            ("p", "select_project", "Project"),
+            ("r", "refresh", "Refresh"),
+            ("P", "projects", "Projects"),
+            ("q", "app.quit", "Quit"),
+        ]
+    )
 
     # What ?/i shows: the user-facing key reference for this screen, in reading order.
     HELP_KEYS: ClassVar[list[tuple[str, str]]] = [

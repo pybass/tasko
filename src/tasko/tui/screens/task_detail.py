@@ -15,6 +15,7 @@ from textual.widgets import Static
 from tasko.core.core import Core
 from tasko.core.errors import AppError
 from tasko.core.models import Priority, Status, Task
+from tasko.tui.keys import with_ru_layout
 from tasko.tui.screens.dialogs import ConfirmDialog, InputDialog, SelectDialog, TextDialog
 from tasko.tui.widgets import StatusBar
 
@@ -41,16 +42,18 @@ def _format_ts(ts: int | None) -> str:
 class TaskDetailScreen(Screen[None]):
     """Details of one task — reached from the task table with Enter."""
 
-    BINDINGS: ClassVar[list[BindingType]] = [
-        ("e", "edit_title", "Title"),
-        ("b", "edit_body", "Body"),
-        ("d", "toggle_done", "Done"),
-        ("s", "toggle_doing", "Doing"),
-        ("p", "edit_priority", "Priority"),
-        ("P", "edit_project", "Project"),
-        ("x", "delete", "Delete"),
-        ("escape", "app.pop_screen", "Back"),
-    ]
+    BINDINGS: ClassVar[list[BindingType]] = with_ru_layout(
+        [
+            ("e", "edit_title", "Title"),
+            ("b", "edit_body", "Body"),
+            ("d", "toggle_done", "Done"),
+            ("s", "toggle_doing", "Doing"),
+            ("p", "edit_priority", "Priority"),
+            ("P", "edit_project", "Project"),
+            ("x", "delete", "Delete"),
+            ("escape", "app.pop_screen", "Back"),
+        ]
+    )
 
     # What ?/i shows: the user-facing key reference for this screen, in reading order.
     HELP_KEYS: ClassVar[list[tuple[str, str]]] = [

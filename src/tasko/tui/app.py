@@ -6,6 +6,7 @@ from textual.app import App
 from textual.binding import BindingType
 
 from tasko.core.core import Core
+from tasko.tui.keys import with_ru_layout
 from tasko.tui.screens.dialogs import HelpDialog
 from tasko.tui.screens.projects import ProjectsScreen
 from tasko.tui.screens.task_detail import TaskDetailScreen
@@ -17,7 +18,7 @@ class TaskoApp(App[None]):
 
     TITLE = "tasko"  # terminal window/tab title
 
-    BINDINGS: ClassVar[list[BindingType]] = [("question_mark,i", "help", "Help")]
+    BINDINGS: ClassVar[list[BindingType]] = with_ru_layout([("question_mark,i", "help", "Help")])
 
     # One canvas: the screens share the table's background so content sits on a single surface.
     # Deliberately not a bare `Screen` selector — that would also repaint the modal dialogs

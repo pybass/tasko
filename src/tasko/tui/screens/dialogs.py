@@ -15,6 +15,8 @@ from textual.screen import ModalScreen
 from textual.widgets import Input, Label, OptionList, Static, TextArea
 from textual.widgets.option_list import Option
 
+from tasko.tui.keys import with_ru_layout
+
 _MATCH_STYLE: Final = Style(bold=True, underline=True)  # characters of a label the fuzzy query matched
 
 
@@ -97,12 +99,14 @@ class TextDialog(Dialog[str | None]):
     }
     """
 
-    BINDINGS: ClassVar[list[BindingType]] = [
-        ("ctrl+s", "save", "Save"),
-        # priority: the TextArea itself binds ctrl+a to "cursor to line start"; the GUI
-        # habit (select all) wins here, line start stays available on Home.
-        Binding("ctrl+a", "select_all", "Select all", priority=True),
-    ]
+    BINDINGS: ClassVar[list[BindingType]] = with_ru_layout(
+        [
+            ("ctrl+s", "save", "Save"),
+            # priority: the TextArea itself binds ctrl+a to "cursor to line start"; the GUI
+            # habit (select all) wins here, line start stays available on Home.
+            Binding("ctrl+a", "select_all", "Select all", priority=True),
+        ]
+    )
 
     def __init__(self, title: str, text: str = "") -> None:
         """Set the prompt title and the initial text."""
@@ -140,10 +144,12 @@ class ConfirmDialog(Dialog[bool]):
     }
     """
 
-    BINDINGS: ClassVar[list[BindingType]] = [
-        ("y", "confirm", "Yes"),
-        ("n", "cancel", "No"),
-    ]
+    BINDINGS: ClassVar[list[BindingType]] = with_ru_layout(
+        [
+            ("y", "confirm", "Yes"),
+            ("n", "cancel", "No"),
+        ]
+    )
 
     def __init__(self, question: str) -> None:
         """Set the question text."""
@@ -174,7 +180,7 @@ class HelpDialog(Dialog[None]):
     }
     """
 
-    BINDINGS: ClassVar[list[BindingType]] = [("question_mark,i", "cancel", "Close")]
+    BINDINGS: ClassVar[list[BindingType]] = with_ru_layout([("question_mark,i", "cancel", "Close")])
 
     def __init__(self, rows: list[tuple[str, str]]) -> None:
         """Set the (key, description) rows in display order."""

@@ -11,6 +11,7 @@ from textual.widgets import DataTable
 
 from tasko.core.core import Core
 from tasko.core.errors import AppError
+from tasko.tui.keys import with_ru_layout
 from tasko.tui.screens.dialogs import ConfirmDialog, InputDialog
 from tasko.tui.widgets import StatusBar
 
@@ -20,15 +21,17 @@ _DEFAULT_CELL: Final = Text("default", style="green")  # marks the default proje
 class ProjectsScreen(Screen[None]):
     """Project management — rarely visited, reached from the task list with P."""
 
-    BINDINGS: ClassVar[list[BindingType]] = [
-        ("j", "cursor_down", "Down"),
-        ("k", "cursor_up", "Up"),
-        ("a", "add", "Add"),
-        ("e", "rename", "Rename"),
-        ("x", "delete", "Delete"),
-        ("m", "make_default", "Make default"),
-        ("escape", "app.pop_screen", "Back"),
-    ]
+    BINDINGS: ClassVar[list[BindingType]] = with_ru_layout(
+        [
+            ("j", "cursor_down", "Down"),
+            ("k", "cursor_up", "Up"),
+            ("a", "add", "Add"),
+            ("e", "rename", "Rename"),
+            ("x", "delete", "Delete"),
+            ("m", "make_default", "Make default"),
+            ("escape", "app.pop_screen", "Back"),
+        ]
+    )
 
     # What ?/i shows: the user-facing key reference for this screen, in reading order.
     HELP_KEYS: ClassVar[list[tuple[str, str]]] = [

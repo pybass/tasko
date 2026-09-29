@@ -1,6 +1,6 @@
 [project]
 name = "tasko"
-version = "0.0.3"
+version = "0.0.4"
 description = "Personal task manager"
 readme = "README.md"
 authors = [{ name = "pybass" }]
@@ -30,22 +30,17 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
-    # Linting & formatting
-    "ruff~=0.16.4",
-    # Type checking
+    "ruff~=0.16.5",
     "mypy~=2.3.1",
-    # Testing
     "pytest~=9.1.1",
     "pytest-asyncio~=1.4.0",
     "pytest-xdist~=3.8.0",
-    # Vulnerability audit
     "pip-audit~=2.10.1",
-    # Git pre-commit hooks
     "pre-commit~=4.6.2",
 ]
 
 [tool.uv]
-required-version = ">=0.11"  # refuse a uv too old for the index/publish semantics we rely on
+required-version = ">=0.12"
 publish-url = "https://upload.pypi.org/legacy/"
 check-url = "https://pypi.org/simple/"  # lets a failed release re-run: uploaded files are skipped
 
@@ -66,6 +61,7 @@ ignore = [
     "RET503",   # explicit None returns are noisy
     "G004",     # f-strings in logging are fine
     "PT001", "PT006", "PT007", "PT023",  # cosmetic pytest-style rules
+    "D401",     # non-imperative-mood — fights noun-phrase docstrings (OpenAPI summaries) and fires inconsistently
     # Categories that fight our style
     "FIX",      # TODOs are fine
     "FBT",      # boolean-trap — too restrictive
@@ -77,13 +73,17 @@ ignore = [
     "PLR0911", "PLR0912", "PLR0913", "PLR0917", "PLR2004",  # soft pylint thresholds
     "TD002", "TD003",  # TODO author/link — optional
     "ASYNC109", # async-function-with-timeout — debatable
+    "D1",       # no docstring-coverage mandate — a docstring is written only where it adds contract
 ]
 
 [tool.ruff.lint.pep8-naming]
 classmethod-decorators = ["pydantic.field_validator"]  # N805: cls is correct without @classmethod
 
+[tool.ruff.lint.pydocstyle]
+ignore-decorators = ["typing.override", "typing.overload"]  # the base class / overload stub carries the contract
+
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["ANN", "S", "SLF"]  # tests skip annotation, assert/security, and private-access rules
+"tests/**/*.py" = ["ANN", "S", "SLF"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -99,7 +99,7 @@ warn_unreachable = true
 enable_error_code = ["redundant-expr", "possibly-undefined", "truthy-bool", "exhaustive-match"]
 
 [[tool.mypy.overrides]]
-module = "tests.*"  # relaxed so pytest fixtures don't fight you
+module = "tests.*"
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
 disallow_untyped_decorators = false
@@ -113,6 +113,6 @@ skip = "uv.lock,.git,.venv,.mypy_cache,.ruff_cache,.pytest_cache"
 testpaths = ["tests"]
 addopts = "-ra --strict-markers --strict-config --import-mode=importlib"
 xfail_strict = true
-filterwarnings = ["error"]  # warnings are failures; targeted ignores go after "error"
+filterwarnings = ["error"]  # targeted ignores go after "error"
 asyncio_mode = "auto"  # Textual Pilot tests are plain `async def`
 asyncio_default_fixture_loop_scope = "function"
