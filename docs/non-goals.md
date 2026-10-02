@@ -9,9 +9,9 @@ forever. Any entry here can be revisited when an actual need appears.
   does not need it, and the column, sorting rules, and UI it would require
   are not worth carrying unused.
 
-- **Scripting and automation integration.** No machine-readable output, no CLI
-  commands, no API. Not a single script or agent uses tasko today; an
-  integration surface would be maintained for nobody.
+- **Deleting tasks and managing projects from the CLI.** The CLI serves
+  scripts and AI agents; destructive and structural changes stay in the TUI,
+  where a person makes them.
 
 - **A `TASKO_DATA_DIR` env var.** `--data-dir` is the only override. A second
   way to point at the database lets a stale `export` silently open the wrong

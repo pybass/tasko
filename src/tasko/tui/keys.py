@@ -17,7 +17,7 @@ def with_ru_layout(bindings: list[BindingType]) -> list[BindingType]:
     """Bind every key to its Russian-layout twin as well: `k` also fires on `л`, `A` on `Ф`, `ctrl+a` on `ctrl+ф`, `?` on `,`."""
     result: list[BindingType] = []
     for binding in bindings:
-        b = binding if isinstance(binding, Binding) else Binding(*binding)
+        b = binding if isinstance(binding, Binding) else Binding(binding[0], binding[1], binding[2] if len(binding) == 3 else "")
         keys = [key.strip() for key in b.key.split(",")]
         twins = []
         for key in keys:

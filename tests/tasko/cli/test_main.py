@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from tasko.main import _resolve_db_path
+from tasko.cli.main import _resolve_db_path
 
 
 class TestResolveDbPath:

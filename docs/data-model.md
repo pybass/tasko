@@ -63,15 +63,16 @@ INSERT INTO app_state (id, default_project_id) SELECT 1, id FROM projects WHERE 
 
 - **Every task belongs to a project** — `project_id` is `NOT NULL`; listing
   and filtering never deal with orphans.
-- **Exactly one default project** — quick capture (`add` with no project
-  given) always has a target. The default is a pointer in `app_state`:
+- **Exactly one default project** — a task added with no project given
+  always has a target. The default is a pointer in `app_state`:
   `NOT NULL` plus an FK with no `ON DELETE` action make "zero defaults" and
   "delete the default project" impossible at the database level. Any project
   can be made the default.
-- **Quick capture lands in the visible list** — the target is
+- **TUI quick capture lands in the visible list** — the target is
   `selected ?? default`, so a new task appears in the list the user is
   looking at. `ON DELETE SET NULL` resets the filter to "all" when the
-  selected project is deleted.
+  selected project is deleted. The CLI `add` without `-p` always uses the
+  default project: the TUI filter must not steer a script.
 - **At least one project always exists** — the default exists and cannot be
   deleted, so the project count never reaches zero.
 - **Deleting a project deletes its tasks** — `ON DELETE CASCADE`; deleting

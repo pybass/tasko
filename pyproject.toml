@@ -1,6 +1,6 @@
 [project]
 name = "tasko"
-version = "0.0.4"
+version = "0.0.5"
 description = "Personal task manager"
 readme = "README.md"
 authors = [{ name = "pybass" }]
@@ -13,6 +13,7 @@ classifiers = [
     "Topic :: Office/Business",
 ]
 dependencies = [
+    "cyclopts==5.1.1",
     "rich==15.0.0",
     "textual==8.2.8",
 ]
@@ -22,7 +23,7 @@ Repository = "https://github.com/pybass/tasko"
 Issues = "https://github.com/pybass/tasko/issues"
 
 [project.scripts]
-tasko = "tasko.main:main"
+tasko = "tasko.cli.main:main"
 
 [build-system]
 requires = ["uv_build>=0.12,<0.13"]  # pinned: build backends live outside uv.lock
@@ -30,8 +31,8 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
-    "ruff~=0.16.5",
-    "mypy~=2.3.1",
+    "ruff~=0.16.10",
+    "mypy~=2.4.0",
     "pytest~=9.1.1",
     "pytest-asyncio~=1.4.0",
     "pytest-xdist~=3.8.0",
