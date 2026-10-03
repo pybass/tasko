@@ -5,7 +5,7 @@ from tasko.cli import utils
 
 
 def run(*, as_json: utils.JsonFlag = False, core: utils.InjectedCore) -> None:
-    """List projects with their open and total task counts.
+    """List projects with task counts; JSON also identifies the default project.
 
     Parameters
     ----------
@@ -16,11 +16,23 @@ def run(*, as_json: utils.JsonFlag = False, core: utils.InjectedCore) -> None:
 
     """
     counts = core.project_task_counts()
-    rows = [(project.name, *counts.get(project.id, (0, 0))) for project in core.list_projects()]
+    projects = core.list_projects()
     if as_json:
-        utils.print_json([{"name": name, "open": open_count, "total": total} for name, open_count, total in rows])
+        default_project_id = core.app_state().default_project_id
+        utils.print_json(
+            [
+                {
+                    "name": project.name,
+                    "open": counts.get(project.id, (0, 0))[0],
+                    "total": counts.get(project.id, (0, 0))[1],
+                    "is_default": project.id == default_project_id,
+                }
+                for project in projects
+            ]
+        )
         return
     table = Table("Project", "Open", "Total")
-    for name, open_count, total in rows:
-        table.add_row(escape(name), str(open_count), str(total))
+    for project in projects:
+        open_count, total = counts.get(project.id, (0, 0))
+        table.add_row(escape(project.name), str(open_count), str(total))
     utils.console.print(table)

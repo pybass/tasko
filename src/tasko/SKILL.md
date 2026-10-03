@@ -3,82 +3,81 @@ name: tasko
 description: Read, add, and update the user's tasks in tasko, their personal task manager. Use when the user asks to save a task for later, show open tasks, pick a task to work on, or mark one done.
 ---
 
-The user's tasks live in tasko. Use the `tasko` CLI and always pass `--json`.
+Use the `tasko` CLI with `--json`. Never read or write the database directly.
+If the CLI is missing or a command fails, report the problem. Suggest
+installing or upgrading only for a missing CLI or unsupported command.
 
-tasko is shared: the user reads and edits the same tasks in a terminal UI,
-and agents reach them through the CLI. Write every task for the person
-first.
+## Writing tasks
 
-If `tasko` is missing or rejects these commands, stop and tell the user to
-install or upgrade tasko. Never read or write the database directly.
+The user reads tasks in a terminal UI. Keep them brief by default.
+Always write titles and bodies in simple English, whatever language the
+user speaks. Use common words and short sentences. Keep logs, errors,
+commands, and quotes unchanged.
 
-## Project
+### Title
 
-A tasko project matches a repository. The project name is the name of the
-git root directory: `basename "$(git rev-parse --show-toplevel)"`. Pass it
-with `-p`.
+Name the main result in at most 60 characters. No period, project name,
+or prefix such as "TODO" or "fix:". One task should cover one result;
+separate independent requests.
 
-If `tasko projects --json` has no such project, ask the user which project
-to use. Never guess, and never fall back to another project.
+### Body
+
+Leave the body empty when the title is enough. Otherwise, briefly capture
+the main idea so a person can understand the task without the chat.
+The agent who works on it will investigate and plan the work then.
+
+Include a detail only when leaving it out could change the intended result
+or lose an essential constraint. Do not add a plan, investigation history,
+file list, or every point from the discussion just because it is available.
+A long discussion does not call for a long body.
+
+When the user asks to save a detailed plan, requirements, logs, or other
+material, preserve the requested detail. A large body is also fine when
+needed evidence or precise requirements demand it. There is no fixed length
+limit or required format; use prose, lists, or code blocks as needed.
+
+Keep only established facts and decisions. Do not turn suggestions into
+requirements or invent reasons. Never include secrets.
+
+## Choosing a project
+
+Use the project the user explicitly names. Otherwise, use the name of the
+current Git root directory, found with `git rev-parse --show-toplevel`.
+Check the name with `tasko projects --json`. If there is no matching project
+or no repository, ask which project to use; never silently use another.
+
+Use the default project only when the user explicitly asks for it. Omit
+`-p` on `add` for that request. Find its name from the project with
+`is_default: true` in `tasko projects --json`, and use that name when
+checking for duplicates. Do not assume it is named "default" or "inbox".
+
+## Adding and updating
+
+- Add or change tasks only when the user asks. Leave priority and status
+  alone unless requested, including when starting or finishing work.
+- Before adding, list open tasks in the chosen project with
+  `tasko list -p PROJECT --json`. This applies to the default project too.
+  If a task seems to cover the same result, show its id and title and offer
+  to update it. Similar titles alone do not make duplicates; the user may
+  still want a separate task.
+- Before working on or editing a task, read it with `tasko show ID --json`.
+  If several tasks fit the request, ask which one. Change only requested
+  fields. `edit --body` replaces the whole body, so keep existing details
+  that the requested edit does not affect.
+- After a write succeeds, tell the user the task id and project. The write
+  commands return the resulting task.
 
 ## Commands
 
 ```
-tasko list -p PROJECT --json          # open tasks; add --all for done ones
+tasko list [-p PROJECT] [--all] --json
 tasko show ID --json
-tasko add TITLE -p PROJECT --body TEXT --json
+tasko add TITLE [-p PROJECT] [--body TEXT] [--priority low|medium|high] --json
 tasko edit ID [--title T] [--body TEXT] [--priority low|medium|high] [-p PROJECT] --json
 tasko status ID todo|doing|done --json
 tasko projects --json
 ```
 
-`add`, `edit`, and `status` print the resulting task. `edit --body` replaces
-the whole body; read the task first when you need to keep part of it.
-
-## Adding a task
-
-1. Add a task only when the user asks. You may suggest one; do not create
-   it on your own.
-2. First run `tasko list -p PROJECT --json`. If an open task already covers
-   it, say so and offer to update that task instead.
-3. One task is one result that can be finished and checked. Split a request
-   that names several.
-4. A task that is not about the current repository goes to the default
-   project: omit `-p`.
-5. Leave the priority alone unless the user names one.
-6. Write the title and body in the language the user speaks.
-7. Tell the user the id and project of every task you wrote.
-
-### Title
-
-The user finds the task by its title in one list across all projects.
-
-- Name the result, in the user's own words where possible.
-- At most 60 characters. No period, no project name, no prefix such as
-  "TODO" or "fix:".
-
-### Body
-
-Keep the body as short as the task allows; many tasks need none.
-
-- Write only what the code cannot tell a later reader: the goal, when the
-  title does not make it clear; a decision already made, with its reason;
-  a place to look that is not obvious.
-- Evidence belongs in the body: quote an error message, a log, or a command
-  exactly, in a code block. Trim it to the lines that matter.
-- Never write a plan, steps, or the story of the discussion. Whoever does
-  the task will plan it against the code as it is then.
-- Write only what the conversation or the code established. Never invent a
-  reason.
-- Your own words stay short plain prose: no headings, no lists, no
-  checklists. Name files by path from the repository root and functions by
-  name, without line numbers.
-- It must stand alone: no "as discussed", "this bug", "the above".
-- Go longer only when the user asks for detail.
-- No secrets.
-
-## Working on a task
-
-1. Read it first: `tasko show ID --json`.
-2. Change the status only when the user asks. When the work is finished,
-   offer to mark the task done; do not mark it yourself.
+`list` shows open tasks; `--all` includes done ones. Without `-p`, `list`
+shows every project, while `add` uses the default project. `edit -p` moves
+a task to that project. `edit --body ""` clears its body.

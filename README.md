@@ -18,7 +18,8 @@ tasko projects
 ```
 
 Every command takes `--json`. Projects are given by name; `add` without
-`-p` uses the default project.
+`-p` uses the default project. `projects --json` includes `is_default` for
+each project.
 
 ## Agent skill
 
