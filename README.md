@@ -5,6 +5,7 @@ A personal task manager: a fast Textual TUI over local SQLite.
 ## Usage
 
 `tasko` launches the TUI, where all task and project management lives.
+`tasko -p PROJECT` opens it with the filter set to that project.
 
 Commands give scripts and AI agents access to the same tasks:
 
