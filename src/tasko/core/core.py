@@ -3,6 +3,7 @@
 import sqlite3
 import time
 from pathlib import Path
+from typing import Any
 
 from tasko.core.errors import AppError
 from tasko.core.migrations import MIGRATIONS
@@ -219,10 +220,12 @@ class Core:
         """Return the singleton application state."""
         # Explicit columns, not *: the row also carries the singleton id, which AppState
         # does not model and the dataclass constructor would reject.
-        row = self._conn.execute("SELECT default_project_id, selected_project_id, theme FROM app_state").fetchone()
+        row = self._conn.execute("SELECT default_project_id, selected_project_id, theme, show_preview FROM app_state").fetchone()
         if row is None:  # invariant broken — the database was edited outside the app; fail loudly
             raise RuntimeError("database invariant violated: app_state row missing")
-        return AppState(**dict(row))
+        data: dict[str, Any] = dict(row)
+        data["show_preview"] = bool(data["show_preview"])  # SQLite stores it as 0 or 1
+        return AppState(**data)
 
     def set_selected_project(self, project_id: int | None) -> None:
         """Set the persisted project filter; None means all projects."""
@@ -231,6 +234,10 @@ class Core:
     def set_theme(self, theme: str) -> None:
         """Persist the UI theme choice."""
         self._conn.execute("UPDATE app_state SET theme = ? WHERE id = 1", (theme,))
+
+    def set_show_preview(self, show: bool) -> None:
+        """Persist whether the task list shows the preview pane."""
+        self._conn.execute("UPDATE app_state SET show_preview = ? WHERE id = 1", (show,))
 
     def set_default_project(self, project_id: int) -> None:
         """Make the given project the default target for quick capture."""

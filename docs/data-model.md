@@ -4,7 +4,7 @@
 
 Two entity tables — `projects` and `tasks` — plus `app_state`, a singleton row
 holding application-level state: the default project, the persisted project
-filter, and the UI theme.
+filter, the UI theme, and the preview pane toggle.
 
 ## Full schema (SQL)
 
@@ -23,12 +23,14 @@ CREATE TABLE projects (
 --     project always exists and the database refuses to delete it;
 --   * selected_project_id — the persisted UI project filter: deleting the
 --     selected project resets the filter to "all" via ON DELETE SET NULL;
---   * theme — the persisted UI theme name.
+--   * theme — the persisted UI theme name;
+--   * show_preview — whether the task list shows the preview pane (0 or 1).
 CREATE TABLE app_state (
     id                  INTEGER PRIMARY KEY CHECK (id = 1),
     default_project_id  INTEGER NOT NULL REFERENCES projects(id),
     selected_project_id INTEGER REFERENCES projects(id) ON DELETE SET NULL,
-    theme               TEXT NOT NULL DEFAULT 'textual-dark'
+    theme               TEXT NOT NULL DEFAULT 'textual-dark',
+    show_preview        INTEGER NOT NULL DEFAULT 0 CHECK (show_preview IN (0, 1))
 ) STRICT;
 
 CREATE TABLE tasks (

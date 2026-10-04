@@ -61,3 +61,4 @@ class AppState:
     default_project_id: int  # quick-capture target when no project is selected
     selected_project_id: int | None  # persisted project filter; None = all projects
     theme: str  # persisted UI theme name (a Textual built-in theme)
+    show_preview: bool  # persisted TUI toggle: the preview pane on the task list

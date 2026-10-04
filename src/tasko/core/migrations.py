@@ -1,7 +1,8 @@
 """Database schema migrations, applied in order by Core."""
 
-# Schema v1 (see docs/data-model.md). IF NOT EXISTS / OR IGNORE make a rerun a no-op;
-# with the atomic runner in Core._migrate, new migrations don't need to be rerun-safe.
+# The initial schema; docs/data-model.md shows the schema after all migrations.
+# IF NOT EXISTS / OR IGNORE make a rerun a no-op; with the atomic runner in
+# Core._migrate, new migrations don't need to be rerun-safe.
 _MIGRATION_V1 = """
 CREATE TABLE IF NOT EXISTS projects (
     id   INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,4 +47,8 @@ INSERT OR IGNORE INTO projects (name) VALUES ('inbox');
 INSERT OR IGNORE INTO app_state (id, default_project_id) SELECT 1, id FROM projects WHERE name = 'inbox';
 """
 
-MIGRATIONS = (_MIGRATION_V1,)  # append-only; index+1 = PRAGMA user_version
+_MIGRATION_V2 = """
+ALTER TABLE app_state ADD COLUMN show_preview INTEGER NOT NULL DEFAULT 0 CHECK (show_preview IN (0, 1));
+"""
+
+MIGRATIONS = (_MIGRATION_V1, _MIGRATION_V2)  # append-only; index+1 = PRAGMA user_version
