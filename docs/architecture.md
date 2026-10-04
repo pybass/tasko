@@ -7,9 +7,18 @@ adapters on top of it. The dependency is strictly one-way: adapters import
 core; core never imports an adapter. This keeps core testable without UI and
 makes new adapters cheap.
 
-Inside `core/`, the single `Core` class owns the SQLite connection,
-migrations, queries, and the business rules around them — there is no
-separate data-access layer.
+Inside `core/`, the single `Core` class owns the SQLite connection, the
+queries, and the business rules around them — there is no separate
+data-access layer: a method is input validation, SQL, and the translation of
+a database error, so a query layer would only pass calls through.
+
+`core/db/` opens the database and brings its schema to the latest version;
+it holds no queries. `schema.py` holds the full current schema; a new
+database is made from it at the latest version. `migrations.py` brings older
+databases up and is append-only: a released migration never changes, and a
+mistake is fixed by a new migration. Every schema change adds a migration and
+makes the same change in `schema.py`; a test checks that both give the same
+database. A database that a newer tasko has migrated is refused.
 
 ## Layout
 
@@ -18,7 +27,10 @@ src/tasko/
 ├── SKILL.md            # agent skill, shipped in the wheel and installed by `tasko skill install`
 ├── core/
 │   ├── core.py         # Core: SQLite connection + all operations and invariants
-│   ├── migrations.py   # schema migrations, applied in order by Core
+│   ├── db/
+│   │   ├── db.py           # open_db: connection setup and the migration runner
+│   │   ├── schema.py       # the full current schema; new databases are made from it
+│   │   └── migrations.py   # append-only steps that bring older databases up
 │   ├── models.py       # Task, Project, AppState, Status, Priority
 │   └── errors.py       # AppError — message shown to the user by adapters
 ├── cli/

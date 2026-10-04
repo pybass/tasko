@@ -44,8 +44,8 @@ Data is a single SQLite file under `$XDG_DATA_HOME/tasko` (default
 
 - [docs/architecture.md](docs/architecture.md) — layering (`core/` + adapters),
   the TUI and CLI roles, tool choices.
-- [docs/data-model.md](docs/data-model.md) — entities, the full SQL schema,
-  and the reasoning behind it.
+- [docs/data-model.md](docs/data-model.md) — entities, invariants, and the
+  reasoning behind them.
 - [docs/non-goals.md](docs/non-goals.md) — features deliberately not built,
   and why.
 

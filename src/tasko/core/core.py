@@ -5,8 +5,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+from tasko.core.db.db import open_db
 from tasko.core.errors import AppError
-from tasko.core.migrations import MIGRATIONS
 from tasko.core.models import AppState, Priority, Project, Status, Task
 
 
@@ -23,27 +23,13 @@ class Core:
 
     def __init__(self, db_path: Path) -> None:
         """Open the database (creating the file and its directory if needed) and migrate it."""
-        db_path.parent.mkdir(parents=True, exist_ok=True)
-        # autocommit: every write is a single self-committing statement; anything that ever
-        # needs multi-statement atomicity must use explicit BEGIN/COMMIT (as _migrate does).
-        self._conn = sqlite3.connect(db_path, autocommit=True)  # single shared connection
-        self._conn.row_factory = sqlite3.Row
-        self._conn.execute("PRAGMA journal_mode = WAL")
-        self._conn.execute("PRAGMA busy_timeout = 5000")
-        self._conn.execute("PRAGMA foreign_keys = ON")
-        self._migrate()
+        # The connection is in autocommit mode: every write here is a single self-committing statement;
+        # anything that ever needs multi-statement atomicity must use explicit BEGIN/COMMIT.
+        self._conn = open_db(db_path)  # single shared connection
 
     def close(self) -> None:
         """Close the connection."""
         self._conn.close()
-
-    def _migrate(self) -> None:
-        """Apply pending migrations, tracked via PRAGMA user_version."""
-        version = int(self._conn.execute("PRAGMA user_version").fetchone()[0])
-        for number, script in enumerate(MIGRATIONS[version:], start=version + 1):
-            # The script and the version bump commit together: a crash mid-migration rolls back
-            # cleanly, so a migration is either fully applied and recorded, or not at all.
-            self._conn.executescript(f"BEGIN;\n{script}\nPRAGMA user_version = {number};\nCOMMIT;")
 
     # --- Tasks ---
 
