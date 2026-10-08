@@ -51,6 +51,7 @@ class TaskDetailScreen(Screen[None]):
             ("p", "edit_priority", "Priority"),
             ("P", "edit_project", "Project"),
             ("x", "delete", "Delete"),
+            ("y", "copy_ref", "Copy"),
             ("escape", "app.pop_screen", "Back"),
         ]
     )
@@ -64,6 +65,7 @@ class TaskDetailScreen(Screen[None]):
         ("p", "change the priority"),
         ("P", "move to another project"),
         ("x", "delete the task"),
+        ("y", "copy 'tasko #ID: title' to the clipboard"),
         ("esc", "back to the task list"),
         ("? i", "this help"),
     ]
@@ -191,6 +193,13 @@ class TaskDetailScreen(Screen[None]):
 
         options = [(priority.value, priority.value) for priority in Priority]
         self.app.push_screen(SelectDialog("Priority:", options, self._loaded_task.priority.value, filterable=False), on_result)
+
+    def action_copy_ref(self) -> None:
+        """Copy 'tasko #ID: title', same as on the task list."""
+        if self._loaded_task is None:
+            return
+        self.app.copy_to_clipboard(f"tasko #{self._task_id}: {self._loaded_task.title}")  # OSC 52; dead in macOS Terminal.app
+        self.notify("Copied")
 
     def action_delete(self) -> None:
         """Confirm and delete the task, then return to the task list."""

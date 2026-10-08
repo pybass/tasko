@@ -1,6 +1,6 @@
 [project]
 name = "tasko"
-version = "0.0.8"
+version = "0.0.9"
 description = "Personal task manager"
 readme = "README.md"
 authors = [{ name = "pybass" }]
@@ -13,7 +13,7 @@ classifiers = [
     "Topic :: Office/Business",
 ]
 dependencies = [
-    "cyclopts==5.1.1",
+    "cyclopts==5.2.0",
     "rich==15.0.0",
     "textual==8.2.8",
 ]

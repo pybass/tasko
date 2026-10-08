@@ -53,6 +53,7 @@ class TaskListScreen(Screen[None]):
             ("plus,equals_sign", "priority_up", "Priority up"),  # = raises too: + is shifted on most layouts
             ("minus", "priority_down", "Priority down"),
             ("x", "delete", "Delete"),
+            ("y", "copy_ref", "Copy"),
             ("D", "toggle_show_done", "Show done"),
             ("v", "toggle_preview", "Preview"),
             ("J", "preview_down", "Preview down"),
@@ -75,6 +76,7 @@ class TaskListScreen(Screen[None]):
         ("s", "mark doing / back to todo"),
         ("+ -", "raise / lower the priority"),
         ("x", "delete the task"),
+        ("y", "copy 'tasko #ID: title' to the clipboard"),
         ("D", "show or hide done tasks"),
         ("v", "show or hide the task preview"),
         ("J K", "scroll the preview"),
@@ -405,6 +407,14 @@ class TaskListScreen(Screen[None]):
                 self.reload()
 
         self.app.push_screen(ConfirmDialog(f"Delete task '{task.title}'?"), on_result)
+
+    def action_copy_ref(self) -> None:
+        """Copy 'tasko #ID: title' for the cursor task — a reference to paste into a chat with an agent."""
+        task_id = self._cursor_task_id()
+        if task_id is None:
+            return
+        self.app.copy_to_clipboard(f"tasko #{task_id}: {self._tasks[task_id].title}")  # OSC 52; dead in macOS Terminal.app
+        self.notify("Copied")
 
     def action_cursor_down(self) -> None:
         """Move the cursor down — the vim-trained alias for the down arrow."""
