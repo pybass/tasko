@@ -17,6 +17,8 @@ from tasko.core.models import Task
 type InjectedCore = Annotated[Core, Parameter(parse=False)]  # a Core injected by the launcher, invisible to CLI parsing
 type ProjectName = Annotated[str | None, Parameter(alias="-p")]
 type JsonFlag = Annotated[bool, Parameter(name="--json", negative="")]
+# A body often starts with "- " (a list); without this the parser reads it as an option and fails.
+type BodyText = Annotated[str | None, Parameter(allow_leading_hyphen=True)]
 
 # The one console every command prints through. highlight=False (no auto-colored numbers) and
 # soft_wrap=True (no hard wrapping in pipes) make console.print behave like print() until a style

@@ -2,7 +2,9 @@
 
 from pathlib import Path
 
-from tasko.cli.main import _resolve_db_path
+import pytest
+
+from tasko.cli.main import _resolve_db_path, app
 
 
 class TestResolveDbPath:
@@ -21,3 +23,12 @@ class TestResolveDbPath:
         """Without XDG_DATA_HOME the default under the home directory is used."""
         monkeypatch.delenv("XDG_DATA_HOME", raising=False)
         assert _resolve_db_path(None) == Path.home() / ".local" / "share" / "tasko" / "tasko.db"
+
+
+class TestParseBody:
+    """A body that starts with a hyphen is a value, not an option."""
+
+    @pytest.mark.parametrize("tokens", [["add", "t", "--body", "- item"], ["edit", "1", "--body", "- item"]])
+    def test_leading_hyphen(self, tokens):
+        _, bound, _ = app.parse_args(tokens)
+        assert bound.kwargs["body"] == "- item"

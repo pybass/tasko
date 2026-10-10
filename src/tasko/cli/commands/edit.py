@@ -7,7 +7,7 @@ def run(
     task_id: int,
     *,
     title: str | None = None,
-    body: str | None = None,
+    body: utils.BodyText = None,
     priority: Priority | None = None,
     project: utils.ProjectName = None,
     as_json: utils.JsonFlag = False,

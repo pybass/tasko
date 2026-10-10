@@ -6,7 +6,7 @@ def run(
     title: str,
     *,
     project: utils.ProjectName = None,
-    body: str | None = None,
+    body: utils.BodyText = None,
     priority: Priority = Priority.MEDIUM,
     as_json: utils.JsonFlag = False,
     core: utils.InjectedCore,
