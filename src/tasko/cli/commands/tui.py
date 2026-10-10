@@ -1,4 +1,5 @@
 from tasko.cli import utils
+lazy from tasko.tui.app import TaskoApp
 
 
 def run(*, project: utils.ProjectName = None, core: utils.InjectedCore) -> None:
@@ -12,9 +13,6 @@ def run(*, project: utils.ProjectName = None, core: utils.InjectedCore) -> None:
         Injected by the launcher.
 
     """
-    # Imported here, not at module top: Textual costs ~90 ms, and every other command would pay it.
-    from tasko.tui.app import TaskoApp  # noqa: PLC0415
-
     if project is not None:
         core.set_selected_project(utils.project_id(core, project))
     TaskoApp(core).run()

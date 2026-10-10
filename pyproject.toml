@@ -1,15 +1,15 @@
 [project]
 name = "tasko"
-version = "0.0.9"
+version = "0.0.10"
 description = "Personal task manager"
 readme = "README.md"
 authors = [{ name = "pybass" }]
 license = "MIT"
 license-files = ["LICENSE"]
-requires-python = ">=3.14"
+requires-python = ">=3.15"
 classifiers = [
     "Environment :: Console",
-    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Topic :: Office/Business",
 ]
 dependencies = [
@@ -26,12 +26,12 @@ Issues = "https://github.com/pybass/tasko/issues"
 tasko = "tasko.cli.main:main"
 
 [build-system]
-requires = ["uv_build>=0.12,<0.13"]  # pinned: build backends live outside uv.lock
+requires = ["uv_build>=0.12,<0.14"]  # pinned: build backends live outside uv.lock
 build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
-    "ruff~=0.16.10",
+    "ruff~=0.17.0",
     "mypy~=2.4.0",
     "pytest~=9.1.1",
     "pytest-asyncio~=1.4.0",
@@ -47,7 +47,7 @@ check-url = "https://pypi.org/simple/"  # lets a failed release re-run: uploaded
 
 [tool.ruff]
 line-length = 130
-target-version = "py314"
+target-version = "py315"
 
 [tool.ruff.lint]
 select = ["ALL"]
@@ -92,7 +92,7 @@ indent-style = "space"
 docstring-code-format = true
 
 [tool.mypy]
-python_version = "3.14"
+python_version = "3.15"
 strict = true
 warn_unreachable = true
 # No "unused-awaitable": Textual's mount/push_screen/remove return awaitables that are optional to
