@@ -7,7 +7,7 @@ from typing import Annotated
 
 from cyclopts import App, Parameter
 
-from tasko.cli.commands import add, edit, projects, show, skill, status, tasks, tui
+from tasko.cli.commands import add, close, edit, projects, reopen, show, skill, tasks, tui
 from tasko.core.core import Core
 from tasko.core.errors import AppError
 
@@ -20,10 +20,11 @@ app.command(tasks.run, name="list", sort_key=1)
 app.command(show.run, name="show", sort_key=2)
 app.command(add.run, name="add", sort_key=3)
 app.command(edit.run, name="edit", sort_key=4)
-app.command(status.run, name="status", sort_key=5)
-app.command(projects.run, name="projects", sort_key=6)
+app.command(close.run, name="close", sort_key=5)
+app.command(reopen.run, name="reopen", sort_key=6)
+app.command(projects.run, name="projects", sort_key=7)
 app.command(skill.app)
-skill.app.sort_key = 7  # sub-apps cannot take sort_key at registration time
+skill.app.sort_key = 8  # sub-apps cannot take sort_key at registration time
 
 
 @app.meta.default

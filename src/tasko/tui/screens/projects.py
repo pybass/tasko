@@ -79,7 +79,7 @@ class ProjectsScreen(Screen[None]):
                 str(project.id),
                 project.name,
                 _DEFAULT_CELL if project.id == default_id else "",
-                f"{open_}/{total}",  # open = todo + doing
+                f"{open_}/{total}",  # open = not closed
                 key=str(project.id),
             )
         if table.row_count:

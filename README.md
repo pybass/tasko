@@ -10,17 +10,22 @@ A personal task manager: a fast Textual TUI over local SQLite.
 Commands give scripts and AI agents access to the same tasks:
 
 ```
-tasko list [-p PROJECT] [--all]      # open tasks; --all adds done ones
+tasko list [-p PROJECT] [--all]      # open tasks; --all adds closed ones
 tasko show ID
 tasko add TITLE [-p PROJECT] [--body TEXT] [--priority low|medium|high]
 tasko edit ID [--title T] [--body TEXT] [--priority P] [-p PROJECT]
-tasko status ID todo|doing|done
+tasko close ID [NOTE]                # NOTE goes in front of the body: the outcome
+tasko reopen ID
 tasko projects
 ```
 
 Every command takes `--json`. Projects are given by name; `add` without
 `-p` uses the default project. `projects --json` includes `is_default` for
 each project.
+
+A task is open or closed, nothing else. Closed means nobody works on it
+anymore; the first lines of the body say what happened: done, dropped, or
+half done.
 
 ## Agent skill
 

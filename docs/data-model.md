@@ -27,10 +27,18 @@ The full SQL schema is in
   deleted, so the project count never reaches zero.
 - **Deleting a project deletes its tasks** — `ON DELETE CASCADE`; deleting
   the last remaining project is refused in the application layer.
-- **done ⇔ done_at** — the invariant lives in a schema CHECK, not in code
-  discipline.
-- **Statuses: `todo → doing → done`** — a single enum; more states can be
-  added later via migration.
+- **A task is open or closed, nothing else** — `closed_at IS NULL` is the
+  whole state; there is no status column. Closed says only that nobody
+  works on the task anymore. What happened — done, dropped, half done — is
+  told by the first lines of the body, which `tasko close ID NOTE` puts
+  there. An enum cannot carry a mixed outcome, and the application treats
+  every closed task the same: hidden, struck through, not counted as open.
+- **A state earns a column only when the application or an agent must act
+  differently on it**, and neither priority nor the body can carry the
+  difference. `doing`, `idea`, `blocked` only move a task in the list,
+  which priority does; `done` vs `dropped` only tells a person something,
+  which the body does. Every state would cost a glyph, a key, a sort rule,
+  and a skill rule.
 - **Ids are never reused** — `AUTOINCREMENT`; short integer ids read well in
   the TUI table.
 - **Timestamps are unix seconds.**

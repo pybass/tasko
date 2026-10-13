@@ -26,19 +26,17 @@ CREATE TABLE tasks (
     project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     title      TEXT NOT NULL CHECK (title <> ''),
     body       TEXT,
-    status     TEXT NOT NULL DEFAULT 'todo' CHECK (status IN ('todo', 'doing', 'done')),
     priority   TEXT NOT NULL DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high')),
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL,
-    done_at    INTEGER,
-    CHECK ((status = 'done') = (done_at IS NOT NULL))
+    closed_at  INTEGER
 ) STRICT;
 
 CREATE INDEX idx_tasks_project ON tasks(project_id);
-CREATE INDEX idx_tasks_status ON tasks(status);
+CREATE INDEX idx_tasks_closed ON tasks(closed_at);
 
 CREATE VIEW tasks_v AS
-SELECT t.id, p.name AS project, t.status, t.priority, t.title, t.created_at, t.done_at
+SELECT t.id, p.name AS project, t.priority, t.title, t.created_at, t.closed_at
 FROM tasks t JOIN projects p ON p.id = t.project_id;
 
 INSERT INTO projects (name) VALUES ('inbox');

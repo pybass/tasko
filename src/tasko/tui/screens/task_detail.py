@@ -14,17 +14,12 @@ from textual.widgets import Static
 
 from tasko.core.core import Core
 from tasko.core.errors import AppError
-from tasko.core.models import Priority, Status, Task
+from tasko.core.models import Priority, Task
 from tasko.tui.keys import with_ru_layout
 from tasko.tui.screens.dialogs import ConfirmDialog, InputDialog, SelectDialog, TextDialog
 from tasko.tui.widgets import StatusBar
 
-# Same glyphs and colors as the table on the main screen, spelled out with the word.
-_STATUS_TEXT: Final = {
-    Status.TODO: Text("· todo", style="dim"),
-    Status.DOING: Text("» doing", style="yellow"),
-    Status.DONE: Text("✓ done", style="green"),
-}
+# Same colors as the priority glyphs on the main screen, spelled out with the word.
 _PRIORITY_TEXT: Final = {
     Priority.HIGH: Text("high", style="red"),
     Priority.MEDIUM: Text("medium"),
@@ -46,8 +41,7 @@ class TaskDetailScreen(Screen[None]):
         [
             ("e", "edit_title", "Title"),
             ("b", "edit_body", "Body"),
-            ("d", "toggle_done", "Done"),
-            ("s", "toggle_doing", "Doing"),
+            ("d", "toggle_closed", "Close"),
             ("p", "edit_priority", "Priority"),
             ("P", "edit_project", "Project"),
             ("x", "delete", "Delete"),
@@ -60,8 +54,7 @@ class TaskDetailScreen(Screen[None]):
     HELP_KEYS: ClassVar[list[tuple[str, str]]] = [
         ("e", "edit the title"),
         ("b", "edit the body"),
-        ("d", "mark done / back to todo"),
-        ("s", "mark doing / back to todo"),
+        ("d", "close the task / reopen it"),
         ("p", "change the priority"),
         ("P", "move to another project"),
         ("x", "delete the task"),
@@ -130,9 +123,10 @@ class TaskDetailScreen(Screen[None]):
         meta.add_column()
         meta.add_column(style="dim")
         meta.add_column(style="dim")
-        meta.add_row("Status", _STATUS_TEXT[task.status], "Created", _format_ts(task.created_at))
+        state = Text("open") if task.closed_at is None else Text("closed", style="strike")
+        meta.add_row("State", state, "Created", _format_ts(task.created_at))
         meta.add_row("Priority", _PRIORITY_TEXT[task.priority], "Updated", _format_ts(task.updated_at))
-        meta.add_row("Project", task.project_name, "Done", _format_ts(task.done_at))
+        meta.add_row("Project", task.project_name, "Closed", _format_ts(task.closed_at))
         self.query_one("#meta", Static).update(meta)
         body = self.query_one("#body", Static)
         body.update(task.body or Text("(no body)", style="dim"))
@@ -168,19 +162,14 @@ class TaskDetailScreen(Screen[None]):
 
         self.app.push_screen(TextDialog("Task body:", self._loaded_task.body or ""), on_result)
 
-    def action_toggle_done(self) -> None:
-        """Toggle done, same as on the task list: not-done → done, done → todo."""
+    def action_toggle_closed(self) -> None:
+        """Close the task, or reopen it when closed, same as on the task list."""
         if self._loaded_task is None:
             return
-        status = Status.TODO if self._loaded_task.status is Status.DONE else Status.DONE
-        self._apply(lambda: self._core.set_status(self._task_id, status))
-
-    def action_toggle_doing(self) -> None:
-        """Toggle doing, same as on the task list: not-doing → doing (even from done), doing → todo."""
-        if self._loaded_task is None:
-            return
-        status = Status.TODO if self._loaded_task.status is Status.DOING else Status.DOING
-        self._apply(lambda: self._core.set_status(self._task_id, status))
+        if self._loaded_task.closed_at is None:
+            self._apply(lambda: self._core.close_task(self._task_id))
+        else:
+            self._apply(lambda: self._core.reopen_task(self._task_id))
 
     def action_edit_priority(self) -> None:
         """Pick a new priority, starting on the current one."""

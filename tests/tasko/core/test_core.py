@@ -1,11 +1,12 @@
 """Core business operations, exercised against a real temporary SQLite database."""
 
+import itertools
 import time
 
 import pytest
 
 from tasko.core.errors import AppError
-from tasko.core.models import Priority, Status
+from tasko.core.models import Priority
 
 
 def ids(tasks):
@@ -17,14 +18,13 @@ class TestAddTask:
     """Task creation and quick-capture targeting."""
 
     def test_defaults(self, core):
-        """A bare add lands in the default project as a medium-priority todo."""
+        """A bare add lands in the default project as an open medium-priority task."""
         task = core.add_task("write tests")
         assert task.title == "write tests"
         assert task.project_id == core.app_state().default_project_id
-        assert task.status is Status.TODO
         assert task.priority is Priority.MEDIUM
         assert task.body is None
-        assert task.done_at is None
+        assert task.closed_at is None
         assert task.created_at == task.updated_at
         assert abs(task.created_at - time.time()) < 5
 
@@ -73,16 +73,22 @@ class TestGetTask:
 class TestListTasks:
     """Listing and its working order."""
 
-    def test_working_order(self, core):
-        """Doing first, then by priority, done tasks sink to the bottom."""
-        high = core.add_task("high", priority=Priority.HIGH)
+    def test_working_order(self, core, monkeypatch):
+        """By priority, then most recently updated; closed tasks sink to the bottom, recently closed first."""
+        clock = itertools.count(1_000_000)  # real time is whole seconds: every write here would share one timestamp
+        monkeypatch.setattr("tasko.core.core._now", lambda: next(clock))
         low = core.add_task("low", priority=Priority.LOW)
-        doing = core.add_task("doing", priority=Priority.LOW)
-        core.set_status(doing.id, Status.DOING)
-        done = core.add_task("done", priority=Priority.HIGH)
-        core.set_status(done.id, Status.DONE)
-        assert ids(core.list_tasks(include_done=True)) == [doing.id, high.id, low.id, done.id]
-        assert ids(core.list_tasks()) == [doing.id, high.id, low.id]
+        older = core.add_task("older")
+        newer = core.add_task("newer")
+        high = core.add_task("high", priority=Priority.HIGH)
+        closed_first = core.add_task("closed first", priority=Priority.HIGH)
+        closed_last = core.add_task("closed last")
+        core.close_task(closed_first.id)
+        core.close_task(closed_last.id)
+        core.set_title(older.id, "older, edited")  # now the most recently updated medium task
+        expected = [high.id, older.id, newer.id, low.id, closed_last.id, closed_first.id]
+        assert ids(core.list_tasks(include_closed=True)) == expected
+        assert ids(core.list_tasks()) == expected[:4]
 
     def test_filter_by_project(self, core):
         """Only the given project's tasks are returned."""
@@ -91,13 +97,13 @@ class TestListTasks:
         work_task = core.add_task("work task", project_id=work.id)
         assert ids(core.list_tasks(project_id=work.id)) == [work_task.id]
 
-    def test_hides_done_by_default(self, core):
-        """Done tasks appear only with include_done."""
+    def test_hides_closed_by_default(self, core):
+        """Closed tasks appear only with include_closed."""
         open_task = core.add_task("open")
-        done = core.add_task("finished")
-        core.set_status(done.id, Status.DONE)
+        closed = core.add_task("finished")
+        core.close_task(closed.id)
         assert ids(core.list_tasks()) == [open_task.id]
-        assert ids(core.list_tasks(include_done=True)) == [open_task.id, done.id]
+        assert ids(core.list_tasks(include_closed=True)) == [open_task.id, closed.id]
 
 
 class TestProjectTaskCounts:
@@ -108,35 +114,76 @@ class TestProjectTaskCounts:
         inbox = core.get_project(core.app_state().default_project_id)
         core.create_project("empty")
         core.add_task("open")
-        done = core.add_task("finished")
-        core.set_status(done.id, Status.DONE)
+        closed = core.add_task("finished")
+        core.close_task(closed.id)
         assert core.project_task_counts() == {inbox.id: (1, 2)}
 
 
-class TestSetStatus:
-    """Status transitions and the done_at invariant."""
+class TestCloseTask:
+    """Closing: the timestamp and the note in front of the body."""
 
-    def test_done_sets_done_at(self, core):
-        """Completing a task stamps done_at together with updated_at."""
-        task = core.add_task("x")
-        core.set_status(task.id, Status.DONE)
+    def test_sets_closed_at(self, core):
+        """Closing stamps closed_at together with updated_at and leaves the body alone."""
+        task = core.add_task("x", body="details")
+        core.close_task(task.id)
         task = core.get_task(task.id)
-        assert task.status is Status.DONE
-        assert task.done_at == task.updated_at
+        assert task.closed_at == task.updated_at
+        assert task.body == "details"
 
-    def test_reopen_clears_done_at(self, core):
-        """Moving a done task back clears done_at."""
+    def test_note_goes_first(self, core):
+        """The note is put in front of the body, separated by a blank line."""
+        task = core.add_task("x", body="details")
+        core.close_task(task.id, "Done; left: the host check.")
+        assert core.get_task(task.id).body == "Done; left: the host check.\n\ndetails"
+
+    def test_note_without_body(self, core):
+        """On an empty body the note becomes the body."""
         task = core.add_task("x")
-        core.set_status(task.id, Status.DONE)
-        core.set_status(task.id, Status.TODO)
-        task = core.get_task(task.id)
-        assert task.status is Status.TODO
-        assert task.done_at is None
+        core.close_task(task.id, "  Rejected.  ")
+        assert core.get_task(task.id).body == "Rejected."
+
+    @pytest.mark.parametrize("note", ["", "   "])
+    def test_blank_note(self, core, note):
+        """A blank note is the same as none."""
+        task = core.add_task("x", body="details")
+        core.close_task(task.id, note)
+        assert core.get_task(task.id).body == "details"
+
+    def test_already_closed(self, core):
+        """A second close is refused, so a stale caller cannot prepend a second note."""
+        task = core.add_task("x")
+        core.close_task(task.id)
+        with pytest.raises(AppError, match="already closed"):
+            core.close_task(task.id, "again")
 
     def test_missing(self, core):
         """An unknown id raises AppError."""
         with pytest.raises(AppError, match="not found"):
-            core.set_status(999, Status.DONE)
+            core.close_task(999)
+
+
+class TestReopenTask:
+    """Reopening clears the timestamp and keeps the body."""
+
+    def test_reopen(self, core):
+        """closed_at is cleared; the body, note included, stays."""
+        task = core.add_task("x")
+        core.close_task(task.id, "Done.")
+        core.reopen_task(task.id)
+        task = core.get_task(task.id)
+        assert task.closed_at is None
+        assert task.body == "Done."
+
+    def test_not_closed(self, core):
+        """Reopening an open task is refused."""
+        task = core.add_task("x")
+        with pytest.raises(AppError, match="not closed"):
+            core.reopen_task(task.id)
+
+    def test_missing(self, core):
+        """An unknown id raises AppError."""
+        with pytest.raises(AppError, match="not found"):
+            core.reopen_task(999)
 
 
 class TestSetTitle:

@@ -45,8 +45,9 @@ def print_task(task: Task, *, as_json: bool) -> None:
         print_json(asdict(task))
         return
     console.print(f"#{task.id} \\[{escape(task.project_name)}] {escape(task.title)}")
+    state = "open" if task.closed_at is None else f"closed {_format_timestamp(task.closed_at)}"
     dates = f"created {_format_timestamp(task.created_at)}, updated {_format_timestamp(task.updated_at)}"
-    console.print(f"{task.status}, {task.priority} priority, {dates}")
+    console.print(f"{state}, {task.priority} priority, {dates}")
     if task.body:
         console.print()
         console.print(escape(task.body))

@@ -3,7 +3,7 @@
 import pytest
 
 from tasko.core.errors import AppError
-from tasko.core.models import Priority, Status
+from tasko.core.models import Priority
 from tasko.tui.app import TaskoApp
 from tasko.tui.screens.task_detail import TaskDetailScreen
 from tasko.tui.screens.task_list import TaskListScreen
@@ -41,20 +41,17 @@ class TestEditing:
             await pilot.pause()
             assert core.get_task(task.id).body == "note"
 
-    async def test_status_toggles(self, core):
-        """Pressing d/s toggles done/doing with the same semantics as on the task list."""
+    async def test_toggle_closed(self, core):
+        """Pressing d closes and reopens with the same semantics as on the task list."""
         task = core.add_task("x")
         async with TaskoApp(core).run_test() as pilot:
             await open_task(pilot)
-            await pilot.press("s")
-            await pilot.pause()
-            assert core.get_task(task.id).status is Status.DOING
             await pilot.press("d")
             await pilot.pause()
-            assert core.get_task(task.id).status is Status.DONE
+            assert core.get_task(task.id).closed_at is not None
             await pilot.press("d")
             await pilot.pause()
-            assert core.get_task(task.id).status is Status.TODO
+            assert core.get_task(task.id).closed_at is None
 
     async def test_priority(self, core):
         """Pressing p picks a priority from the list (medium → high)."""

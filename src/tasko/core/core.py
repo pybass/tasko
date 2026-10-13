@@ -7,7 +7,7 @@ from typing import Any
 
 from tasko.core.db.db import open_db
 from tasko.core.errors import AppError
-from tasko.core.models import AppState, Priority, Project, Status, Task
+from tasko.core.models import AppState, Priority, Project, Task
 
 
 def _now() -> int:
@@ -66,44 +66,58 @@ class Core:
             raise AppError(f"Task #{task_id} not found.")
         return Task.from_row(row)
 
-    def list_tasks(self, *, project_id: int | None = None, include_done: bool = False) -> list[Task]:
-        """Return tasks in working order, optionally filtered to one project; done tasks appear only with include_done.
+    def list_tasks(self, *, project_id: int | None = None, include_closed: bool = False) -> list[Task]:
+        """Return tasks in working order, optionally filtered to one project; closed tasks appear only with include_closed.
 
-        Working order: doing first, then by priority, then recently updated; done tasks
-        sink to the bottom (recently finished first, since done_at == updated_at).
+        Working order: by priority, then recently updated; closed tasks sink to the bottom, recently
+        closed first regardless of priority. A closed task keeps its place when its body is edited later.
         """
         rows = self._conn.execute(
             """
             SELECT t.*, p.name AS project_name
             FROM tasks t JOIN projects p ON p.id = t.project_id
             WHERE (:project_id IS NULL OR t.project_id = :project_id)
-              AND (:include_done OR t.status != 'done')
-            ORDER BY t.status = 'done',
-                     t.status = 'doing' DESC,
-                     CASE t.priority WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END,
-                     t.updated_at DESC
+              AND (:include_closed OR t.closed_at IS NULL)
+            ORDER BY t.closed_at IS NOT NULL,
+                     CASE WHEN t.closed_at IS NULL THEN CASE t.priority WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END END,
+                     coalesce(t.closed_at, t.updated_at) DESC
             """,
-            {"project_id": project_id, "include_done": include_done},
+            {"project_id": project_id, "include_closed": include_closed},
         ).fetchall()
         return [Task.from_row(row) for row in rows]
 
     def project_task_counts(self) -> dict[int, tuple[int, int]]:
         """Return {project_id: (open, total)} task counts; projects without tasks are absent."""
         rows = self._conn.execute(
-            "SELECT project_id, sum(status != 'done') AS open, count(*) AS total FROM tasks GROUP BY project_id"
+            "SELECT project_id, sum(closed_at IS NULL) AS open, count(*) AS total FROM tasks GROUP BY project_id"
         ).fetchall()
         return {int(row["project_id"]): (int(row["open"]), int(row["total"])) for row in rows}
 
-    def set_status(self, task_id: int, status: Status) -> None:
-        """Move a task to the given status, maintaining done_at."""
-        now = _now()  # one timestamp for both columns: on completion done_at == updated_at
-        done_at = now if status is Status.DONE else None
-        cur = self._conn.execute(
-            "UPDATE tasks SET status = :status, done_at = :done_at, updated_at = :now WHERE id = :id",
-            {"status": status, "done_at": done_at, "now": now, "id": task_id},
+    def close_task(self, task_id: int, note: str | None = None) -> None:
+        """Close an open task; a note goes in front of the body, so the outcome is the first thing a reader sees.
+
+        Raises AppError for a closed task, so a stale caller cannot prepend a second note.
+        """
+        if self.get_task(task_id).closed_at is not None:
+            raise AppError(f"Task #{task_id} is already closed.")
+        if note is not None:
+            note = note.strip() or None
+        now = _now()  # one timestamp for both columns: on closing closed_at == updated_at
+        self._conn.execute(
+            """
+            UPDATE tasks
+            SET closed_at = :now, updated_at = :now,
+                body = CASE WHEN :note IS NULL THEN body WHEN body IS NULL THEN :note ELSE :note || :sep || body END
+            WHERE id = :id
+            """,
+            {"now": now, "note": note, "sep": "\n\n", "id": task_id},
         )
-        if cur.rowcount == 0:
-            raise AppError(f"Task #{task_id} not found.")
+
+    def reopen_task(self, task_id: int) -> None:
+        """Reopen a closed task; the body is left as it is. Raises AppError for an open task."""
+        if self.get_task(task_id).closed_at is None:
+            raise AppError(f"Task #{task_id} is not closed.")
+        self._conn.execute("UPDATE tasks SET closed_at = NULL, updated_at = :now WHERE id = :id", {"now": _now(), "id": task_id})
 
     def set_title(self, task_id: int, title: str) -> None:
         """Rename a task; the new title must be non-empty."""

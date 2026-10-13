@@ -13,30 +13,24 @@ from textual.widgets import DataTable, Static
 
 from tasko.core.core import Core
 from tasko.core.errors import AppError
-from tasko.core.models import Priority, Status, Task
+from tasko.core.models import Priority, Task
 from tasko.tui.keys import with_ru_layout
 from tasko.tui.screens.dialogs import ConfirmDialog, InputDialog, SelectDialog
 from tasko.tui.screens.projects import ProjectsScreen
 from tasko.tui.screens.task_detail import TaskDetailScreen
 from tasko.tui.widgets import StatusBar
 
-# One-character, color-coded cells: the status, priority and body columns must not waste width.
-_STATUS_CELLS: Final = {
-    Status.TODO: Text("·", style="dim"),
-    Status.DOING: Text("»", style="yellow"),
-    Status.DONE: Text("✓", style="green"),
-}
+# One-character, color-coded cells: the priority column must not waste width.
 _PRIORITY_CELLS: Final = {
     Priority.HIGH: Text("↑", style="red"),
     Priority.MEDIUM: Text(""),  # the default level is visual silence
     Priority.LOW: Text("↓", style="dim"),
 }
-_BODY_CELL: Final = Text("≡", style="dim")  # marks that a task has a body; the text itself is shown elsewhere
 
 
-def _title_cell(title: str, status: Status) -> Text:
-    """Render a title cell: done tasks are struck through, and a title wider than its column ends in an ellipsis."""
-    return Text(title, style="strike" if status is Status.DONE else "", overflow="ellipsis")
+def _title_cell(task: Task) -> Text:
+    """Render a title cell: closed tasks are struck through, and a title wider than its column ends in an ellipsis."""
+    return Text(task.title, style="" if task.closed_at is None else "strike", overflow="ellipsis")
 
 
 class TaskListScreen(Screen[None]):
@@ -48,13 +42,12 @@ class TaskListScreen(Screen[None]):
             ("k", "cursor_up", "Up"),
             ("a", "add", "Add"),
             ("A", "add_with_project", "Add to project"),
-            ("d", "toggle_done", "Done"),
-            ("s", "toggle_doing", "Doing"),
+            ("d", "toggle_closed", "Close"),
             ("plus,equals_sign", "priority_up", "Priority up"),  # = raises too: + is shifted on most layouts
             ("minus", "priority_down", "Priority down"),
             ("x", "delete", "Delete"),
             ("y", "copy_ref", "Copy"),
-            ("D", "toggle_show_done", "Show done"),
+            ("D", "toggle_show_closed", "Show closed"),
             ("v", "toggle_preview", "Preview"),
             ("J", "preview_down", "Preview down"),
             ("K", "preview_up", "Preview up"),
@@ -72,12 +65,11 @@ class TaskListScreen(Screen[None]):
         ("enter", "open the task under the cursor"),
         ("a", "add a task into the cursor row's project"),
         ("A", "add a task, choosing the project first"),
-        ("d", "mark done / back to todo"),
-        ("s", "mark doing / back to todo"),
+        ("d", "close the task / reopen it"),
         ("+ -", "raise / lower the priority"),
         ("x", "delete the task"),
         ("y", "copy 'tasko #ID: title' to the clipboard"),
-        ("D", "show or hide done tasks"),
+        ("D", "show or hide closed tasks"),
         ("v", "show or hide the task preview"),
         ("J K", "scroll the preview"),
         ("f", "focus the cursor task's project / back to all"),
@@ -117,7 +109,7 @@ class TaskListScreen(Screen[None]):
         """Wire the screen to the core."""
         super().__init__()
         self._core = core  # core operations
-        self._show_done = False  # session-only toggle; done tasks are hidden by default
+        self._show_closed = False  # session-only toggle; closed tasks are hidden by default
         self._show_preview = core.app_state().show_preview
         # The tasks on display by id, in list order: the preview and redraws read them instead of the database.
         self._tasks: dict[int, Task] = {}
@@ -155,7 +147,7 @@ class TaskListScreen(Screen[None]):
     def reload(self) -> None:
         """Re-read the tasks from the database and redraw the screen."""
         state = self._core.app_state()
-        tasks = self._core.list_tasks(project_id=state.selected_project_id, include_done=self._show_done)
+        tasks = self._core.list_tasks(project_id=state.selected_project_id, include_closed=self._show_closed)
         self._tasks = {task.id: task for task in tasks}
         # The status bar shows the context: the project filter, plus task counts under it.
         # The filter project's name cannot come from the task rows — it may have zero tasks.
@@ -163,8 +155,8 @@ class TaskListScreen(Screen[None]):
             title = self._core.get_project(state.selected_project_id).name
         else:
             title = "all projects"
-        open_count = sum(1 for task in tasks if task.status is not Status.DONE)
-        counts = f" · {open_count} open · {len(tasks) - open_count} done" if self._show_done else f" · {open_count} open"
+        open_count = sum(1 for task in tasks if task.closed_at is None)
+        counts = f" · {open_count} open · {len(tasks) - open_count} closed" if self._show_closed else f" · {open_count} open"
         self.query_one(StatusBar).set_context(Text.assemble(title, (counts, "dim")))
         self._redraw()
 
@@ -191,7 +183,7 @@ class TaskListScreen(Screen[None]):
         if beside:
             # What the list needs besides the title: the other columns, one cell of padding on
             # each side of every column, and the two-cell vertical scrollbar.
-            fixed_width = id_width + project_width + (17 if show_priority else 14)
+            fixed_width = id_width + project_width + (11 if show_priority else 8)
             # The pane takes the room the list leaves: at most 80 columns, a readable line, and
             # at least 50, taken from the title column, where long titles are cut.
             pane_width = max(50, min(80, width - fixed_width - title_width))
@@ -200,24 +192,20 @@ class TaskListScreen(Screen[None]):
         preview.display = self._show_preview
         preview.styles.width = pane_width
         self.query_one("#main").set_class(beside, "-beside")
-        # One-letter labels for the status/priority glyph columns; the body marker column explains itself.
         table.add_column(Text("#", justify="right"), width=id_width)
-        self._status_column = table.add_column("S", width=1)  # column keys for the in-place updates in _toggle_*
-        self._priority_column = table.add_column("P", width=1) if show_priority else None  # None while hidden
+        # Column keys for the in-place updates in action_toggle_closed and _shift_priority; None while P is hidden.
+        self._priority_column = table.add_column("P", width=1) if show_priority else None
         table.add_column("Project", width=project_width)
         self._title_column = table.add_column("Title", width=title_width)
-        table.add_column("", width=1)
         ids = []
         for task in tasks:
             ids.append(str(task.id))
             # Ink hierarchy: the title is the content and stays bright; id and project are context and dim.
             table.add_row(
                 Text(str(task.id), style="dim", justify="right"),
-                _STATUS_CELLS[task.status],
                 *([_PRIORITY_CELLS[task.priority]] if show_priority else []),
                 Text(task.project_name, style="dim"),
-                _title_cell(task.title, task.status),
-                _BODY_CELL if task.body else "",
+                _title_cell(task),
                 key=str(task.id),
             )
         if table.row_count:
@@ -326,8 +314,8 @@ class TaskListScreen(Screen[None]):
         key = table.coordinate_to_cell_key(table.cursor_coordinate).row_key.value
         return int(key) if key is not None else None
 
-    def _toggle_status(self, target: Status) -> None:
-        """Flip the cursor task into the target status (or back to todo), updating its row in place.
+    def action_toggle_closed(self) -> None:
+        """Close the cursor task, or reopen it when closed, updating its row in place.
 
         Deliberately no reload: the row stays where it is, so an accidental press is
         visible and undone with the same key. The task re-sorts or disappears on the
@@ -337,21 +325,21 @@ class TaskListScreen(Screen[None]):
         if task_id is None:
             return
         try:
+            if self._core.get_task(task_id).closed_at is None:
+                self._core.close_task(task_id)
+            else:
+                self._core.reopen_task(task_id)
             task = self._core.get_task(task_id)
-            status = Status.TODO if task.status is target else target
-            self._core.set_status(task_id, status)
         except AppError as e:
             self.notify(str(e), severity="error")
             return
-        self._tasks[task_id] = replace(task, status=status)  # a redraw reads the loaded copy, not the database
-        table = self.query_one(DataTable)
-        table.update_cell(str(task_id), self._status_column, _STATUS_CELLS[status])
-        table.update_cell(str(task_id), self._title_column, _title_cell(task.title, status))
+        self._tasks[task_id] = task  # a redraw reads the loaded copy, not the database
+        self.query_one(DataTable).update_cell(str(task_id), self._title_column, _title_cell(task))
 
     def _shift_priority(self, step: int) -> None:
         """Move the cursor task one step along low → medium → high, updating its row in place.
 
-        Same philosophy as _toggle_status: no reload, the change is visible under the
+        Same philosophy as action_toggle_closed: no reload, the change is visible under the
         cursor and the opposite key undoes it; the row re-sorts on the next reload. The
         exception is a hidden P column (everything was medium): only a reload can bring
         it back, and the cursor still follows the task by id.
@@ -376,14 +364,6 @@ class TaskListScreen(Screen[None]):
             self.reload()
         else:
             self.query_one(DataTable).update_cell(str(task_id), column, _PRIORITY_CELLS[priority])
-
-    def action_toggle_done(self) -> None:
-        """Toggle done for the task under the cursor: not-done → done, done → todo."""
-        self._toggle_status(Status.DONE)
-
-    def action_toggle_doing(self) -> None:
-        """Toggle doing for the task under the cursor: not-doing → doing (even from done), doing → todo."""
-        self._toggle_status(Status.DOING)
 
     def action_delete(self) -> None:
         """Confirm and delete the task under the cursor — the same dialog as on the detail screen."""
@@ -432,9 +412,9 @@ class TaskListScreen(Screen[None]):
         """Lower the cursor task's priority one step."""
         self._shift_priority(-1)
 
-    def action_toggle_show_done(self) -> None:
-        """Show or hide done tasks."""
-        self._show_done = not self._show_done
+    def action_toggle_show_closed(self) -> None:
+        """Show or hide closed tasks."""
+        self._show_closed = not self._show_closed
         self.reload()
 
     def action_toggle_preview(self) -> None:
@@ -454,7 +434,7 @@ class TaskListScreen(Screen[None]):
         preview.scroll_relative(y=-(preview.size.height // 2), animate=False)
 
     def action_refresh(self) -> None:
-        """Reload the list: apply pending re-sorts/hides from d/s and pick up changes from another instance."""
+        """Reload the list: apply pending re-sorts/hides from d and pick up changes from another instance."""
         self.reload()
 
     def action_focus_project(self) -> None:

@@ -6,14 +6,6 @@ from enum import StrEnum
 from typing import Any, Self
 
 
-class Status(StrEnum):
-    """Task lifecycle state; values match the TEXT stored in SQLite."""
-
-    TODO = "todo"
-    DOING = "doing"
-    DONE = "done"
-
-
 class Priority(StrEnum):
     """Task priority; values match the TEXT stored in SQLite."""
 
@@ -38,18 +30,16 @@ class Task:
     project_id: int  # owning project
     project_name: str  # owning project's name, joined in by core queries
     title: str  # short summary, non-empty
-    body: str | None  # optional long description
-    status: Status  # current lifecycle state
+    body: str | None  # optional long description; on a closed task its first lines say the outcome
     priority: Priority  # low / medium / high
     created_at: int  # unix seconds
     updated_at: int  # unix seconds; equals created_at until the first modification
-    done_at: int | None  # unix seconds; set exactly when status is done
+    closed_at: int | None  # unix seconds; None while the task is open
 
     @classmethod
     def from_row(cls, row: sqlite3.Row) -> Self:
-        """Build a Task from a database row, coercing the TEXT status/priority into enums."""
+        """Build a Task from a database row, coercing the TEXT priority into its enum."""
         data: dict[str, Any] = dict(row)
-        data["status"] = Status(data["status"])
         data["priority"] = Priority(data["priority"])
         return cls(**data)
 

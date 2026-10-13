@@ -1,11 +1,17 @@
 ---
 name: tasko
-description: Read, add, and update the user's tasks in tasko, their personal task manager. Use when the user asks to save a task for later, show open tasks, pick a task to work on, or mark one done.
+description: Read, add, update, and close the user's tasks in tasko, their personal task manager. Use when the user asks to save a task for later, show open tasks, pick a task to work on, or when work on a task is finished.
 ---
 
 Use the `tasko` CLI with `--json`. Never read or write the database directly.
 If the CLI is missing or a command fails, report the problem. Suggest
 installing or upgrading only for a missing CLI or unsupported command.
+
+A task is open or closed; there is no other state. Closed means nobody works
+on it anymore. Whether the result was achieved, dropped, or half done is told
+by the first lines of the body. An open task does not by itself ask you to
+work on it, and a high priority does not either: act on the user's request,
+and read the task for its limits.
 
 ## Writing tasks
 
@@ -39,6 +45,17 @@ limit or required format; use prose, lists, or code blocks as needed.
 Keep only established facts and decisions. Do not turn suggestions into
 requirements or invent reasons. Never include secrets.
 
+### Outcome of a closed task
+
+The body of a closed task starts with the outcome: what was done, what was
+not done and why, what was rolled back or still needs a check. A few lines
+of facts, no plan and no diff. `tasko close ID NOTE` puts the note in front
+of the body, so the original request stays below it. A plain
+`tasko close ID` is fine when the title says it all.
+
+Nothing parses these lines. Write them for the person, in prose, with no
+required words.
+
 ## Choosing a project
 
 Use the project the user explicitly names. Otherwise, use the name of the
@@ -53,8 +70,8 @@ checking for duplicates. Do not assume it is named "default" or "inbox".
 
 ## Adding and updating
 
-- Add or change tasks only when the user asks. Leave priority and status
-  alone unless requested, including when starting or finishing work.
+- Add or change tasks only when the user asks. Leave priority alone unless
+  requested.
 - Before adding, list open tasks in the chosen project with
   `tasko list -p PROJECT --json`. This applies to the default project too.
   If a task seems to cover the same result, show its id and title and offer
@@ -67,6 +84,19 @@ checking for duplicates. Do not assume it is named "default" or "inbox".
 - After a write succeeds, tell the user the task id and project. The write
   commands return the resulting task.
 
+## Closing and reopening
+
+- Close a task yourself when the user asked you to do that task and its
+  result is achieved and checked: lint, tests, or the real app, whatever
+  applies. Making edits is not the same as achieving the result.
+- Do not close partial work on your own. Write what is done and what is
+  left into the body with `edit --body`, leave the task open, and say so.
+  What happens to the rest is the user's decision; after it, close the task
+  with that outcome.
+- Say in the chat what you closed: `closed #ID: the outcome in a few words`.
+- `close` refuses a closed task. Use `reopen` when work resumes, then
+  revise the first lines so they say what remains.
+
 ## Commands
 
 ```
@@ -74,10 +104,11 @@ tasko list [-p PROJECT] [--all] --json
 tasko show ID --json
 tasko add TITLE [-p PROJECT] [--body TEXT] [--priority low|medium|high] --json
 tasko edit ID [--title T] [--body TEXT] [--priority low|medium|high] [-p PROJECT] --json
-tasko status ID todo|doing|done --json
+tasko close ID [NOTE] --json
+tasko reopen ID --json
 tasko projects --json
 ```
 
-`list` shows open tasks; `--all` includes done ones. Without `-p`, `list`
-shows every project, while `add` uses the default project. `edit -p` moves
-a task to that project. `edit --body ""` clears its body.
+`list` shows open tasks; `--all` adds closed ones after them. Without `-p`,
+`list` shows every project, while `add` uses the default project. `edit -p`
+moves a task to that project. `edit --body ""` clears its body.

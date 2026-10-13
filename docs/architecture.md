@@ -31,7 +31,7 @@ src/tasko/
 │   │   ├── db.py           # open_db: connection setup and the migration runner
 │   │   ├── schema.py       # the full current schema; new databases are made from it
 │   │   └── migrations.py   # append-only steps that bring older databases up
-│   ├── models.py       # Task, Project, AppState, Status, Priority
+│   ├── models.py       # Task, Project, AppState, Priority
 │   └── errors.py       # AppError — message shown to the user by adapters
 ├── cli/
 │   ├── main.py         # entry point: resolve data dir, open database, run a command
@@ -63,8 +63,8 @@ package root because a skill's name must match its folder name.
 
 ## Tools
 
-- **CLI: cyclopts** — commands are typed functions; the `Status` and
-  `Priority` enums become validated choices without extra code.
+- **CLI: cyclopts** — commands are typed functions; the `Priority` enum
+  becomes a validated choice without extra code.
 - **TUI: Textual** — mature, actively maintained, on public PyPI.
 - **Models: frozen, slotted dataclasses** — enums are `StrEnum` subclasses,
   so their values match the TEXT stored in SQLite. The database is the

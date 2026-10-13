@@ -11,18 +11,18 @@ from tasko.cli import utils
 def run(
     *,
     project: utils.ProjectName = None,
-    include_done: Annotated[bool, Parameter(name="--all", negative="")] = False,
+    include_closed: Annotated[bool, Parameter(name="--all", negative="")] = False,
     as_json: utils.JsonFlag = False,
     core: utils.InjectedCore,
 ) -> None:
-    """List open tasks: doing first, then by priority, then recently updated.
+    """List open tasks: by priority, then recently updated.
 
     Parameters
     ----------
     project
         Show only this project's tasks.
-    include_done
-        Include done tasks.
+    include_closed
+        Include closed tasks, after the open ones.
     as_json
         Print JSON instead of a table.
     core
@@ -30,7 +30,7 @@ def run(
 
     """
     tasks = core.list_tasks(
-        project_id=utils.project_id(core, project) if project is not None else None, include_done=include_done
+        project_id=utils.project_id(core, project) if project is not None else None, include_closed=include_closed
     )
     if as_json:
         utils.print_json([asdict(task) for task in tasks])
@@ -38,7 +38,9 @@ def run(
     if not tasks:
         utils.console.print("No tasks.")
         return
-    table = Table("ID", "Project", "Status", "Priority", "Title")
+    # The State column exists only when closed rows can appear; otherwise every row would say "open".
+    table = Table("ID", "Project", *(["State"] if include_closed else []), "Priority", "Title")
     for task in tasks:
-        table.add_row(str(task.id), escape(task.project_name), task.status, task.priority, escape(task.title))
+        state = ["open" if task.closed_at is None else "closed"] if include_closed else []
+        table.add_row(str(task.id), escape(task.project_name), *state, task.priority, escape(task.title))
     utils.console.print(table)

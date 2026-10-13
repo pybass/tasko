@@ -32,21 +32,20 @@ CREATE TABLE tasks (
     project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     title      TEXT NOT NULL CHECK (title <> ''),
     body       TEXT,
-    status     TEXT NOT NULL DEFAULT 'todo' CHECK (status IN ('todo', 'doing', 'done')),
     priority   TEXT NOT NULL DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high')),
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL,  -- equals created_at when never modified
-    done_at    INTEGER,
-    -- done_at is present exactly when the task is done: no half-closed states.
-    CHECK ((status = 'done') = (done_at IS NOT NULL))
+    -- NULL while the task is open. Closed says only that nobody works on the task anymore; whether the result
+    -- was achieved, dropped, or half done is told by the body, so there is no status column.
+    closed_at  INTEGER
 ) STRICT;
 
 CREATE INDEX idx_tasks_project ON tasks(project_id);
-CREATE INDEX idx_tasks_status ON tasks(status);
+CREATE INDEX idx_tasks_closed ON tasks(closed_at);
 
 -- Readable listing for manual DB inspection (project names instead of ids); the application does not use it.
 CREATE VIEW tasks_v AS
-SELECT t.id, p.name AS project, t.status, t.priority, t.title, t.created_at, t.done_at
+SELECT t.id, p.name AS project, t.priority, t.title, t.created_at, t.closed_at
 FROM tasks t JOIN projects p ON p.id = t.project_id;
 
 -- Seed: a fresh database always starts with one project, which is the default.
