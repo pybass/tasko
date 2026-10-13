@@ -2,7 +2,7 @@ from tasko.cli import utils
 
 
 def run(task_id: int, note: utils.BodyText = None, *, as_json: utils.JsonFlag = False, core: utils.InjectedCore) -> None:
-    """Close a task and print it; the note is put in front of the body.
+    """Close a task and print it; the note is put in front of the body, above a --- line.
 
     Parameters
     ----------

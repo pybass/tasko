@@ -50,8 +50,8 @@ requirements or invent reasons. Never include secrets.
 The body of a closed task starts with the outcome: what was done, what was
 not done and why, what was rolled back or still needs a check. A few lines
 of facts, no plan and no diff. `tasko close ID NOTE` puts the note in front
-of the body, so the original request stays below it. A plain
-`tasko close ID` is fine when the title says it all.
+of the body with a `---` line between them, so the original request stays
+below the line. A plain `tasko close ID` is fine when the title says it all.
 
 Nothing parses these lines. Write them for the person, in prose, with no
 required words.
@@ -95,7 +95,7 @@ checking for duplicates. Do not assume it is named "default" or "inbox".
   with that outcome.
 - Say in the chat what you closed: `closed #ID: the outcome in a few words`.
 - `close` refuses a closed task. Use `reopen` when work resumes, then
-  revise the first lines so they say what remains.
+  revise the lines above `---` so they say what remains.
 
 ## Commands
 

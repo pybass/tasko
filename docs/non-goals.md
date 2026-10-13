@@ -22,7 +22,7 @@ forever. Any entry here can be revisited when an actual need appears.
   [data-model.md](data-model.md).
 
 - **Comments.** One person and their agents would be writing a thread with
-  themselves. The outcome goes in front of the body when a task is closed;
+  themselves. The outcome goes in front of the body, above a `---` line, when a task is closed;
   a later note is a dated line in the body.
 
 - **Deleting tasks and managing projects from the CLI.** The CLI serves

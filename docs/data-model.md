@@ -31,7 +31,7 @@ The full SQL schema is in
   whole state; there is no status column. Closed says only that nobody
   works on the task anymore. What happened — done, dropped, half done — is
   told by the first lines of the body, which `tasko close ID NOTE` puts
-  there. An enum cannot carry a mixed outcome, and the application treats
+  there above a `---` line. An enum cannot carry a mixed outcome, and the application treats
   every closed task the same: hidden, struck through, not counted as open.
 - **A state earns a column only when the application or an agent must act
   differently on it**, and neither priority nor the body can carry the

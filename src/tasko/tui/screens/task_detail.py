@@ -129,7 +129,8 @@ class TaskDetailScreen(Screen[None]):
         meta.add_row("Project", task.project_name, "Closed", _format_ts(task.closed_at))
         self.query_one("#meta", Static).update(meta)
         body = self.query_one("#body", Static)
-        body.update(task.body or Text("(no body)", style="dim"))
+        # Text, not str: Static would parse square brackets in a str as markup.
+        body.update(Text(task.body) if task.body else Text("(no body)", style="dim"))
 
     def _apply(self, operation: Callable[[], object]) -> None:
         """Run a core operation; refresh the screen on success, toast the message on AppError."""

@@ -14,7 +14,7 @@ tasko list [-p PROJECT] [--all]      # open tasks; --all adds closed ones
 tasko show ID
 tasko add TITLE [-p PROJECT] [--body TEXT] [--priority low|medium|high]
 tasko edit ID [--title T] [--body TEXT] [--priority P] [-p PROJECT]
-tasko close ID [NOTE]                # NOTE goes in front of the body: the outcome
+tasko close ID [NOTE]                # NOTE, the outcome, goes in front of the body above a --- line
 tasko reopen ID
 tasko projects
 ```

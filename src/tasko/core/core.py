@@ -94,7 +94,7 @@ class Core:
         return {int(row["project_id"]): (int(row["open"]), int(row["total"])) for row in rows}
 
     def close_task(self, task_id: int, note: str | None = None) -> None:
-        """Close an open task; a note goes in front of the body, so the outcome is the first thing a reader sees.
+        """Close an open task; a note goes in front of the body, above a "---" line, so the outcome is read first.
 
         Raises AppError for a closed task, so a stale caller cannot prepend a second note.
         """
@@ -110,7 +110,7 @@ class Core:
                 body = CASE WHEN :note IS NULL THEN body WHEN body IS NULL THEN :note ELSE :note || :sep || body END
             WHERE id = :id
             """,
-            {"now": now, "note": note, "sep": "\n\n", "id": task_id},
+            {"now": now, "note": note, "sep": "\n\n---\n\n", "id": task_id},
         )
 
     def reopen_task(self, task_id: int) -> None:

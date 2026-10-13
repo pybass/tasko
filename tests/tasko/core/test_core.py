@@ -131,10 +131,10 @@ class TestCloseTask:
         assert task.body == "details"
 
     def test_note_goes_first(self, core):
-        """The note is put in front of the body, separated by a blank line."""
+        """The note is put in front of the body, with a --- line between them."""
         task = core.add_task("x", body="details")
         core.close_task(task.id, "Done; left: the host check.")
-        assert core.get_task(task.id).body == "Done; left: the host check.\n\ndetails"
+        assert core.get_task(task.id).body == "Done; left: the host check.\n\n---\n\ndetails"
 
     def test_note_without_body(self, core):
         """On an empty body the note becomes the body."""
