@@ -147,7 +147,7 @@ class TaskDetailScreen(Screen[None]):
 
         def on_result(title: str | None) -> None:
             if title:
-                self._apply(lambda: self._core.set_title(self._task_id, title))
+                self._apply(lambda: self._core.update_task(self._task_id, title=title))
 
         self.app.push_screen(InputDialog("Task title:", value=self._loaded_task.title), on_result)
 
@@ -158,7 +158,7 @@ class TaskDetailScreen(Screen[None]):
 
         def on_result(text: str | None) -> None:
             if text is not None:
-                self._apply(lambda: self._core.set_body(self._task_id, text))
+                self._apply(lambda: self._core.update_task(self._task_id, body=text))
 
         self.app.push_screen(TextDialog("Task body:", self._loaded_task.body or ""), on_result)
 
@@ -178,7 +178,7 @@ class TaskDetailScreen(Screen[None]):
 
         def on_result(choice: str | None) -> None:
             if choice is not None:
-                self._apply(lambda: self._core.set_priority(self._task_id, Priority(choice)))
+                self._apply(lambda: self._core.update_task(self._task_id, priority=Priority(choice)))
 
         options = [(priority.value, priority.value) for priority in Priority]
         self.app.push_screen(SelectDialog("Priority:", options, self._loaded_task.priority.value, filterable=False), on_result)
@@ -214,7 +214,7 @@ class TaskDetailScreen(Screen[None]):
 
         def on_result(choice: str | None) -> None:
             if choice is not None:
-                self._apply(lambda: self._core.set_project(self._task_id, int(choice)))
+                self._apply(lambda: self._core.update_task(self._task_id, project_id=int(choice)))
 
         options = [(str(project.id), project.name) for project in self._core.list_projects()]
         self.app.push_screen(SelectDialog("Project:", options, str(self._loaded_task.project_id)), on_result)

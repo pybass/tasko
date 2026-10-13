@@ -119,44 +119,48 @@ class Core:
             raise AppError(f"Task #{task_id} is not closed.")
         self._conn.execute("UPDATE tasks SET closed_at = NULL, updated_at = :now WHERE id = :id", {"now": _now(), "id": task_id})
 
-    def set_title(self, task_id: int, title: str) -> None:
-        """Rename a task; the new title must be non-empty."""
-        title = title.strip()
-        if not title:
-            raise AppError("Task title cannot be empty.")
-        cur = self._conn.execute(
-            "UPDATE tasks SET title = :title, updated_at = :now WHERE id = :id",
-            {"title": title, "now": _now(), "id": task_id},
-        )
-        if cur.rowcount == 0:
-            raise AppError(f"Task #{task_id} not found.")
+    def update_task(
+        self,
+        task_id: int,
+        *,
+        title: str | None = None,
+        body: str | None = None,
+        priority: Priority | None = None,
+        project_id: int | None = None,
+    ) -> None:
+        """Change the given fields in one statement, so a rejected value changes nothing; None leaves a field alone.
 
-    def set_body(self, task_id: int, body: str | None) -> None:
-        """Replace a task's body; empty or whitespace-only text clears it."""
+        An empty or whitespace-only body clears it; the title must be non-empty.
+        """
+        if title is not None:
+            title = title.strip()
+            if not title:
+                raise AppError("Task title cannot be empty.")
+        set_body = body is not None  # decided before stripping: an empty body is a change (clear), None is not
         if body is not None:
             body = body.strip() or None
-        cur = self._conn.execute(
-            "UPDATE tasks SET body = :body, updated_at = :now WHERE id = :id",
-            {"body": body, "now": _now(), "id": task_id},
-        )
-        if cur.rowcount == 0:
-            raise AppError(f"Task #{task_id} not found.")
-
-    def set_priority(self, task_id: int, priority: Priority) -> None:
-        """Change a task's priority."""
-        cur = self._conn.execute(
-            "UPDATE tasks SET priority = :priority, updated_at = :now WHERE id = :id",
-            {"priority": priority, "now": _now(), "id": task_id},
-        )
-        if cur.rowcount == 0:
-            raise AppError(f"Task #{task_id} not found.")
-
-    def set_project(self, task_id: int, project_id: int) -> None:
-        """Move a task to another project."""
+        if title is None and not set_body and priority is None and project_id is None:
+            raise AppError("Nothing to change.")
         try:
             cur = self._conn.execute(
-                "UPDATE tasks SET project_id = :project_id, updated_at = :now WHERE id = :id",
-                {"project_id": project_id, "now": _now(), "id": task_id},
+                """
+                UPDATE tasks
+                SET title = coalesce(:title, title),
+                    body = CASE WHEN :set_body THEN :body ELSE body END,
+                    priority = coalesce(:priority, priority),
+                    project_id = coalesce(:project_id, project_id),
+                    updated_at = :now
+                WHERE id = :id
+                """,
+                {
+                    "title": title,
+                    "set_body": set_body,
+                    "body": body,
+                    "priority": priority,
+                    "project_id": project_id,
+                    "now": _now(),
+                    "id": task_id,
+                },
             )
         except sqlite3.IntegrityError as e:  # foreign key: no such project
             raise AppError(f"Project #{project_id} not found.") from e

@@ -85,7 +85,7 @@ class TestListTasks:
         closed_last = core.add_task("closed last")
         core.close_task(closed_first.id)
         core.close_task(closed_last.id)
-        core.set_title(older.id, "older, edited")  # now the most recently updated medium task
+        core.update_task(older.id, title="older, edited")  # now the most recently updated medium task
         expected = [high.id, older.id, newer.id, low.id, closed_last.id, closed_first.id]
         assert ids(core.list_tasks(include_closed=True)) == expected
         assert ids(core.list_tasks()) == expected[:4]
@@ -186,86 +186,55 @@ class TestReopenTask:
             core.reopen_task(999)
 
 
-class TestSetTitle:
-    """Renaming a task."""
+class TestUpdateTask:
+    """Changing one or several fields in one statement."""
 
-    def test_rename(self, core):
-        """The new title is stored trimmed."""
+    def test_all_fields(self, core):
+        """Every given field is stored; the title is trimmed."""
+        work = core.create_project("work")
         task = core.add_task("x")
-        core.set_title(task.id, "  y  ")
-        assert core.get_task(task.id).title == "y"
+        core.update_task(task.id, title="  y  ", body="details", priority=Priority.HIGH, project_id=work.id)
+        updated = core.get_task(task.id)
+        assert (updated.title, updated.body, updated.priority, updated.project_id) == ("y", "details", Priority.HIGH, work.id)
+
+    def test_none_leaves_field_alone(self, core):
+        """Fields not given keep their values."""
+        task = core.add_task("x", body="details", priority=Priority.HIGH)
+        core.update_task(task.id, title="y")
+        updated = core.get_task(task.id)
+        assert (updated.title, updated.body, updated.priority) == ("y", "details", Priority.HIGH)
+
+    @pytest.mark.parametrize("body", ["", "   "])
+    def test_clear_body(self, core, body):
+        """Empty or whitespace-only text clears the body."""
+        task = core.add_task("x", body="details")
+        core.update_task(task.id, body=body)
+        assert core.get_task(task.id).body is None
 
     @pytest.mark.parametrize("title", ["", "   "])
     def test_empty_title(self, core, title):
         """Empty titles are rejected."""
         task = core.add_task("x")
         with pytest.raises(AppError, match="title cannot be empty"):
-            core.set_title(task.id, title)
+            core.update_task(task.id, title=title)
 
-    def test_missing(self, core):
-        """An unknown id raises AppError."""
-        with pytest.raises(AppError, match="not found"):
-            core.set_title(999, "y")
-
-
-class TestSetBody:
-    """Replacing and clearing the body."""
-
-    def test_set(self, core):
-        """A non-empty body is stored."""
+    def test_nothing_to_change(self, core):
+        """A call without fields is an error, not a silent touch."""
         task = core.add_task("x")
-        core.set_body(task.id, "details")
-        assert core.get_task(task.id).body == "details"
+        with pytest.raises(AppError, match="Nothing to change"):
+            core.update_task(task.id)
 
-    @pytest.mark.parametrize("body", [None, "", "   "])
-    def test_clear(self, core, body):
-        """None, empty, or whitespace-only text clears the body."""
-        task = core.add_task("x", body="details")
-        core.set_body(task.id, body)
-        assert core.get_task(task.id).body is None
-
-    def test_missing(self, core):
-        """An unknown id raises AppError."""
-        with pytest.raises(AppError, match="not found"):
-            core.set_body(999, "details")
-
-
-class TestSetPriority:
-    """Changing the priority."""
-
-    def test_change(self, core):
-        """The new priority is stored."""
-        task = core.add_task("x")
-        core.set_priority(task.id, Priority.HIGH)
-        assert core.get_task(task.id).priority is Priority.HIGH
-
-    def test_missing(self, core):
-        """An unknown id raises AppError."""
-        with pytest.raises(AppError, match="not found"):
-            core.set_priority(999, Priority.LOW)
-
-
-class TestSetProject:
-    """Moving a task between projects."""
-
-    def test_move(self, core):
-        """The task ends up in the target project."""
-        work = core.create_project("work")
-        task = core.add_task("x")
-        core.set_project(task.id, work.id)
-        assert core.get_task(task.id).project_id == work.id
-
-    def test_unknown_project(self, core):
-        """A dangling project id is rejected via the foreign key."""
+    def test_rejected_value_changes_nothing(self, core):
+        """A dangling project id is rejected via the foreign key, and the other fields stay as they were."""
         task = core.add_task("x")
         with pytest.raises(AppError, match="Project #999 not found"):
-            core.set_project(task.id, 999)
+            core.update_task(task.id, title="y", project_id=999)
+        assert core.get_task(task.id).title == "x"
 
     def test_missing_task(self, core):
         """An unknown task id raises AppError."""
-        inbox = core.get_project(core.app_state().default_project_id)
         with pytest.raises(AppError, match="Task #999 not found"):
-            core.set_project(999, inbox.id)
+            core.update_task(999, title="y")
 
 
 class TestDeleteTask:

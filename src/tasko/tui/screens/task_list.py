@@ -354,7 +354,7 @@ class TaskListScreen(Screen[None]):
             if not 0 <= index < len(scale):
                 return  # already at the end of the scale
             priority = scale[index]
-            self._core.set_priority(task_id, priority)
+            self._core.update_task(task_id, priority=priority)
         except AppError as e:
             self.notify(str(e), severity="error")
             return
