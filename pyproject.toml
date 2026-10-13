@@ -37,7 +37,7 @@ dev = [
     "pytest-asyncio~=1.4.0",
     "pytest-xdist~=3.8.0",
     "pip-audit~=2.10.1",
-    "pre-commit~=4.6.2",
+    "pre-commit~=4.7.0",
 ]
 
 [tool.uv]
