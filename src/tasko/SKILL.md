@@ -58,10 +58,18 @@ required words.
 
 ## Choosing a project
 
+For `show`, `edit`, `close`, or `reopen` by task ID, use the task's project;
+do not look up a project or list tasks first. Choose a project only when
+adding a task, filtering a list, or explicitly moving a task.
+
 Use the project the user explicitly names. Otherwise, use the name of the
 current Git root directory, found with `git rev-parse --show-toplevel`.
-Check the name with `tasko projects --json`. If there is no matching project
-or no repository, ask which project to use; never silently use another.
+Reuse a known Git root while the working directory is unchanged.
+If there is no repository or a command reports that the project does not
+exist, ask which project to use; never silently use another.
+
+Use `tasko projects --json` only to discover available projects or resolve
+the default project as described below.
 
 Use the default project only when the user explicitly asks for it. Omit
 `-p` on `add` for that request. Find its name from the project with
@@ -72,17 +80,19 @@ checking for duplicates. Do not assume it is named "default" or "inbox".
 
 - Add or change tasks only when the user asks. Leave priority alone unless
   requested.
-- Before adding, list open tasks in the chosen project with
-  `tasko list -p PROJECT --json`. This applies to the default project too.
+- Before adding, run `tasko list -p PROJECT --json` once to validate the
+  project name and check open tasks for duplicates. This applies to the
+  default project too.
   If a task seems to cover the same result, show its id and title and offer
   to update it. Similar titles alone do not make duplicates; the user may
   still want a separate task.
 - Before working on or editing a task, read it with `tasko show ID --json`.
+  Skip this read if another command has just returned the full task.
   If several tasks fit the request, ask which one. Change only requested
   fields. `edit --body` replaces the whole body, so keep existing details
   that the requested edit does not affect.
-- After a write succeeds, tell the user the task id and project. The write
-  commands return the resulting task.
+- After a write succeeds, report the task id and project from its result;
+  do not run `show` just to confirm a successful write.
 
 ## Closing and reopening
 
