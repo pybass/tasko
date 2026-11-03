@@ -2,4 +2,4 @@
 
 
 class AppError(Exception):
-    """Business-rule violation or bad input; adapters show the message to the user."""
+    """An application failure whose message adapters show to the user."""
