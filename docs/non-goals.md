@@ -25,9 +25,11 @@ forever. Any entry here can be revisited when an actual need appears.
   themselves. The outcome goes in front of the body, above a `---` line, when a task is closed;
   a later note is a dated line in the body.
 
-- **Deleting tasks and managing projects from the CLI.** The CLI serves
-  scripts and AI agents; destructive and structural changes stay in the TUI,
-  where a person makes them.
+- **Deleting tasks, and renaming or deleting projects, from the CLI.** The
+  CLI serves scripts and AI agents. Deleting cannot be undone, so a person
+  does it in the TUI. Renaming is rare, and agents find a project by its
+  name, so a person does that too. Adding a project loses nothing, so the
+  CLI allows it.
 
 - **A `TASKO_DATA_DIR` env var.** `--data-dir` is the only override. A second
   way to point at the database lets a stale `export` silently open the wrong

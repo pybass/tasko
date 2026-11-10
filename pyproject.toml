@@ -1,6 +1,6 @@
 [project]
 name = "tasko"
-version = "0.1.0"
+version = "0.1.1"
 description = "Personal task manager"
 readme = "README.md"
 authors = [{ name = "pybass" }]
@@ -13,7 +13,7 @@ classifiers = [
     "Topic :: Office/Business",
 ]
 dependencies = [
-    "cyclopts==5.3.3",
+    "cyclopts==5.4.0",
     "rich==15.0.0",
     "textual==8.2.8",
 ]
@@ -31,7 +31,7 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
-    "ruff~=0.17.3",
+    "ruff~=0.17.4",
     "mypy~=2.4.1",
     "pytest~=9.2.0",
     "pytest-asyncio~=1.4.1.post1",

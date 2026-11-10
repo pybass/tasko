@@ -22,9 +22,10 @@ app.command(add.run, name="add", sort_key=3)
 app.command(edit.run, name="edit", sort_key=4)
 app.command(close.run, name="close", sort_key=5)
 app.command(reopen.run, name="reopen", sort_key=6)
-app.command(projects.run, name="projects", sort_key=7)
+app.command(projects.app)
+projects.app.sort_key = 7  # sub-apps cannot take sort_key at registration time
 app.command(skill.app)
-skill.app.sort_key = 8  # sub-apps cannot take sort_key at registration time
+skill.app.sort_key = 8
 
 
 @app.meta.default

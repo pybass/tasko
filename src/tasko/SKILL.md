@@ -65,8 +65,14 @@ adding a task, filtering a list, or explicitly moving a task.
 Use the project the user explicitly names. Otherwise, use the name of the
 current Git root directory, found with `git rev-parse --show-toplevel`.
 Reuse a known Git root while the working directory is unchanged.
-If there is no repository or a command reports that the project does not
-exist, ask which project to use; never silently use another.
+If there is no repository, ask which project to use.
+
+If a command reports that the project does not exist, say so; never
+silently use another. When the request was to add a task, also offer to
+create the project, giving the exact name. Create a project with
+`tasko projects add NAME --json` only when the user asks for it or agrees
+to your offer, then continue with the request. Never create a project on
+your own.
 
 Use `tasko projects --json` only to discover available projects or resolve
 the default project as described below.
@@ -117,6 +123,7 @@ tasko edit ID [--title T] [--body TEXT] [--priority low|medium|high] [-p PROJECT
 tasko close ID [NOTE] --json
 tasko reopen ID --json
 tasko projects --json
+tasko projects add NAME --json
 ```
 
 `list` shows open tasks; `--all` adds closed ones after them. Without `-p`,

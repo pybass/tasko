@@ -49,9 +49,10 @@ The TUI is where a person works: `tasko` with no command opens it, and all
 task and project management lives there.
 
 The CLI exists for scripts and AI agents. It covers reading, adding, and
-updating tasks, and prints JSON with `--json`. It names projects, not ids,
-so a caller can pass a repository name. Deleting tasks and managing projects
-stay TUI-only: those are rare, destructive, and a person's call.
+updating tasks and adding projects, and prints JSON with `--json`. It names
+projects, not ids, so a caller can pass a repository name. Deleting tasks
+and renaming or deleting projects stay TUI-only; see
+[non-goals.md](non-goals.md).
 
 A CLI command only parses arguments, calls `Core`, and prints. Rules and
 validation belong in `Core`, so both adapters behave the same.

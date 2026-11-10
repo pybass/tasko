@@ -17,6 +17,7 @@ tasko edit ID [--title T] [--body TEXT] [--priority P] [-p PROJECT]
 tasko close ID [NOTE]                # NOTE, the outcome, goes in front of the body above a --- line
 tasko reopen ID
 tasko projects
+tasko projects add NAME
 ```
 
 Every command takes `--json`. Projects are given by name; `add` without
